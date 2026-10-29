@@ -1,0 +1,51 @@
+.board { display: flex; gap: 24px; padding: 28px 36px; align-items: flex-start; }
+.col { flex: 1; min-width: 0; }
+.count { font-size: 14px; }
+.card { margin-top: 16px; padding: 22px; border-top: 5px solid; transition: box-shadow .3s; }
+.no { font-size: 22px; font-weight: 700; }
+.ago { font-size: 14px; font-weight: 600; }
+.rider { font-size: 14px; color: var(--sub); }
+.addr { font-size: 16px; margin-top: 8px; font-weight: 600; }
+.who { font-size: 14px; color: var(--sub); margin-top: 2px; }
+.items { font-size: 19px; margin-top: 16px; line-height: 1.7; }
+.note { font-size: 14px; color: var(--sub); margin-top: 6px; font-style: italic; }
+.cod { background: var(--bg); color: var(--text); font-size: 14px; padding: 6px 12px; }
+.actions { display: flex; gap: 10px; margin-top: 18px; }
+.actions :global(.btn) { height: 50px; }
+.delivered { color: var(--green); font-weight: 600; font-size: 16px; }
+.empty { margin-top: 16px; border: 1.5px dashed #DDDAD3; border-radius: var(--r); padding: 28px; text-align: center; color: var(--faint); font-size: 15px; }
+.fresh { animation: ring 1.2s ease-out 0s 8; box-shadow: 0 0 0 3px var(--amber), var(--shadow); }
+@keyframes ring {
+  0% { box-shadow: 0 0 0 3px var(--amber), 0 0 0 3px rgba(217,119,6,.35); }
+  100% { box-shadow: 0 0 0 3px var(--amber), 0 0 0 16px rgba(217,119,6,0); }
+}
+.toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff;
+  padding: 14px 20px; border-radius: 14px; font-size: 15px; font-weight: 500; box-shadow: var(--shadow); z-index: 60;
+}
+.soundPrompt {
+  position: fixed; bottom: 28px; right: 28px; background: var(--accent); color: #fff; border: 0; cursor: pointer;
+  padding: 14px 20px; border-radius: 14px; font: inherit; font-size: 15px; font-weight: 600; box-shadow: var(--shadow); z-index: 55;
+}
+
+.switcher { display: none; }
+@media (max-width: 760px) {
+  .board { flex-direction: column; gap: 0; padding: 14px 16px 96px; align-items: stretch; }
+  .switcher {
+    display: flex; gap: 4px; background: var(--surface); border-radius: 14px; padding: 4px; box-shadow: var(--shadow);
+    position: sticky; top: 100px; z-index: 5;
+  }
+  .switcher button {
+    flex: 1; height: 44px; border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--sub);
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
+  }
+  .switcher .switchOn { background: var(--text); color: #fff; }
+  .switcher :global(.badge) { padding: 2px 8px; }
+  .mobileHidden { display: none; }
+  .col > :global(.row) { display: none; }
+  .card { padding: 18px; }
+  .items { font-size: 17px; margin-top: 12px; }
+  .addr { font-size: 15px; }
+  .soundPrompt { left: 16px; right: 16px; bottom: 16px; }
+  .toast { bottom: 84px; width: calc(100% - 32px); text-align: center; }
+}

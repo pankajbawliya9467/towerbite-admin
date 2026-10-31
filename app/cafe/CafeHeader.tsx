@@ -58,6 +58,7 @@ export function CafeHeader() {
         { href: '/cafe', label: 'Live orders', icon: 'bell', badge: today?.active },
         { href: '/cafe/menu', label: 'Menu & stock', icon: 'menu' },
         { href: '/cafe/history', label: 'Order history', icon: 'history' },
+        { href: '/cafe/reports', label: 'Reports', icon: 'chart' },
         ...(isAdmin ? [{ href: '/admin/cafes', label: 'Back to admin', icon: 'back' as const }] : []),
       ]}
       footer={

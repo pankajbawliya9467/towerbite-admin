@@ -39,3 +39,16 @@ export type AdminStats = {
   ordersToday: number; salesToday: number; activeOrders: number; users: number; cafes: number; locations: number;
   byCafe: { id: string; name: string; emoji: string; locationName: string; orders: number; sales: number }[];
 };
+
+export type ReportTotals = { sales: number; orders: number; delivered: number; cancelled: number; rejected: number; all: number; avgOrder: number; lostPct: number };
+export type CafeReport = {
+  range: { from: string; to: string; days: number; prevFrom: string; prevTo: string };
+  totals: ReportTotals;
+  previous: ReportTotals;
+  change: { sales: number | null; orders: number | null; avgOrder: number | null; lostPct: number | null };
+  byDay: { day: string; sales: number; orders: number }[];
+  byHour: { hour: number; orders: number }[];
+  peakHour: { hour: number; orders: number } | null;
+  topItems: { name: string; qty: number; sales: number; share: number; rising: boolean }[];
+  companies: { name: string; orders: number; sales: number }[];
+};

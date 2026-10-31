@@ -21,6 +21,9 @@ const PATHS = {
   user: <><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></>,
   history: <><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l3 2" /></>,
   menu: <><path d="M4 6h16M4 12h16M4 18h10" /></>,
+  chart: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
+  download: <><path d="M12 4v12M7 11l5 5 5-5" /><path d="M4 20h16" /></>,
+  print: <><path d="M6 9V3h12v6" /><rect x="3" y="9" width="18" height="8" rx="2" /><path d="M7 14h10v7H7z" /></>,
 };
 
 export type IconName = keyof typeof PATHS;

@@ -9,10 +9,10 @@ import { OrderCard, type Action } from './OrderCard';
 import { RejectDialog, DispatchDialog } from './OrderDialogs';
 import styles from './board.module.css';
 
-const COLUMNS: { status: OrderStatus; title: string; badge: string }[] = [
-  { status: 'placed', title: 'New', badge: 'warn' },
-  { status: 'preparing', title: 'Preparing', badge: 'acc' },
-  { status: 'out_for_delivery', title: 'Out for delivery', badge: 'ok' },
+const COLUMNS: { status: OrderStatus; title: string; badge: string; dot: string }[] = [
+  { status: 'placed', title: 'New', badge: 'warn', dot: '#D97706' },
+  { status: 'preparing', title: 'Preparing', badge: 'acc', dot: 'var(--accent)' },
+  { status: 'out_for_delivery', title: 'On the way', badge: 'info', dot: '#2563EB' },
 ];
 const FRESH_MS = 15000;
 /** Like delivery-app tablets: keep ringing while a new order is waiting to be accepted. */
@@ -91,7 +91,7 @@ export default function BoardPage() {
         return (
           <section key={col.status} className={`${styles.col} ${mobileCol === col.status ? '' : styles.mobileHidden}`}>
             <div className="row">
-              <div className="h2">{col.title}</div>
+              <div className="h2"><span className={styles.dot} style={{ background: col.dot }} />{col.title}</div>
               <span className={`badge ${col.badge} ${styles.count}`}>{list.length}</span>
             </div>
             {list.map((o) => (

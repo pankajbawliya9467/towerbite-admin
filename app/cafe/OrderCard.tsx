@@ -6,7 +6,7 @@ import styles from './board.module.css';
 
 export type Action = 'accept' | 'reject' | 'dispatch' | 'deliver';
 
-const TONE = { placed: 'var(--amber)', preparing: 'var(--accent)', out_for_delivery: 'var(--green)' } as Record<string, string>;
+const TONE = { placed: '#D97706', preparing: 'var(--accent)', out_for_delivery: '#2563EB' } as Record<string, string>;
 
 export function OrderCard({ order, now, fresh, onAction }: {
   order: Order; now: number; fresh: boolean; onAction: (a: Action) => void;
@@ -29,18 +29,22 @@ export function OrderCard({ order, now, fresh, onAction }: {
       </div>
       <div className={styles.addr}>{addressLine(order.address, out ? 'company' : 'desk')}</div>
       {out ? (
-        <div className="row" style={{ marginTop: 16 }}>
-          <span className={`badge ${styles.cod}`}>Collect {rupees(order.total)}</span>
-          <button className={styles.delivered} onClick={() => onAction('deliver')}>Delivered ✓</button>
-        </div>
+        <>
+          <div className="row" style={{ marginTop: 12 }}>
+            <span className={`badge ${styles.cod}`}>Collect {rupees(order.total)}</span>
+          </div>
+          <div className={styles.actions}>
+            <button className="btn go" style={{ flex: 1 }} onClick={() => onAction('deliver')}>Delivered · cash taken</button>
+          </div>
+        </>
       ) : (
         <>
           {who && <div className={styles.who}>{who}</div>}
           <div className={styles.items}>
             {order.items.map((i) => <div key={i.id}><b>{i.qty}</b> {i.name}</div>)}
           </div>
-          {order.note && <div className={styles.note}>“{order.note}”</div>}
-          <div className="row" style={{ marginTop: 16 }}>
+          {order.note && <div className={styles.note}>Note: {order.note}</div>}
+          <div className="row" style={{ marginTop: 12 }}>
             <span className={`badge ${styles.cod}`}>COD {rupees(order.total)}</span>
           </div>
           {order.status === 'placed' ? (
@@ -50,7 +54,7 @@ export function OrderCard({ order, now, fresh, onAction }: {
             </div>
           ) : (
             <div className={styles.actions}>
-              <button className="btn dark" style={{ flex: 1 }} onClick={() => onAction('dispatch')}>Mark ready</button>
+              <button className="btn dark" style={{ flex: 1 }} onClick={() => onAction('dispatch')}>Send out</button>
             </div>
           )}
         </>

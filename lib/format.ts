@@ -37,7 +37,7 @@ export function addressLine(a: Address, last: 'desk' | 'company' = 'desk') {
 export const STATUS: Record<OrderStatus, { label: string; cls: string }> = {
   placed: { label: 'New', cls: 'warn' },
   preparing: { label: 'Preparing', cls: 'acc' },
-  out_for_delivery: { label: 'Out for delivery', cls: 'ok' },
+  out_for_delivery: { label: 'On the way', cls: 'info' },
   delivered: { label: 'Delivered', cls: 'ok' },
   rejected: { label: 'Rejected', cls: 'no' },
   cancelled: { label: 'Cancelled', cls: 'mute' },

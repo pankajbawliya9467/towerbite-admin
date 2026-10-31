@@ -1,33 +1,33 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { api } from '@/lib/api';
-import { clock } from '@/lib/format';
+import { clock, rupees } from '@/lib/format';
 import type { CafeWithMenu } from '@/lib/types';
 import { useCafe } from '@/components/CafeContext';
 import { useSession } from '@/components/Session';
-import { Mark } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
-import styles from './cafe.module.css';
+import { Sidebar } from '@/components/Sidebar';
 
-const TABS = [
-  { href: '/cafe', label: 'Orders' },
-  { href: '/cafe/menu', label: 'Menu' },
-  { href: '/cafe/history', label: 'History' },
-];
+type Today = { orders: number; delivered: number; sales: number; codCollected: number; active: number };
 
+/** The cafe's sidebar: sections, "Accepting orders" switch, today's numbers, clock. */
 export function CafeHeader() {
   const { cafe, setCafe, isAdmin } = useCafe();
   const { logout } = useSession();
-  const path = usePathname();
   const [now, setNow] = useState<Date | null>(null);
   const [busy, setBusy] = useState(false);
+  const [today, setToday] = useState<Today | null>(null);
 
   useEffect(() => {
     setNow(new Date());
     const t = setInterval(() => setNow(new Date()), 5000);
-    return () => clearInterval(t);
+    const load = () => api.get<Today>('/v1/cafe/stats').then(setToday, () => undefined);
+    void load();
+    const s = setInterval(load, 30000);
+    return () => {
+      clearInterval(t);
+      clearInterval(s);
+    };
   }, []);
 
   async function toggleAccepting() {
@@ -44,27 +44,48 @@ export function CafeHeader() {
     document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
 
   return (
-    <header className={styles.header}>
-      <div className="logo">
-        <Mark />
-        {cafe.name}
-        <span className={styles.on}>on TowerBites</span>
-      </div>
-      <nav className={styles.tabs}>
-        {TABS.map((t) => (
-          <Link key={t.href} href={t.href} className={path === t.href ? styles.active : undefined}>{t.label}</Link>
-        ))}
-        {isAdmin && <Link href="/admin/cafes">Admin</Link>}
-      </nav>
-      <div className={styles.right}>
-        <button className={`iconbtn ${styles.fullscreen}`} onClick={toggleFullscreen} title="Fullscreen (TV mode)" aria-label="Fullscreen"><Icon name="expand" /></button>
-        <button className="iconbtn" onClick={logout} title="Sign out" aria-label="Sign out"><Icon name="logout" /></button>
-        <button className={`badge ${cafe.acceptingOrders ? 'ok' : 'no'} ${styles.accepting}`} onClick={toggleAccepting}
-          disabled={busy} title="Click to switch">
-          ● {cafe.acceptingOrders ? 'Accepting' : 'Not accepting'}<span className={styles.long}> orders</span>
-        </button>
-        <span className={styles.clock}>{now ? clock(now) : ''}</span>
-      </div>
-    </header>
+    <Sidebar
+      brand={
+        <>
+          <span className="side-emoji" style={{ background: cafe.coverColor }}>{cafe.emoji}</span>
+          <span style={{ minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cafe.name}</span>
+            <small style={{ display: 'block', letterSpacing: 0 }}>on TowerBites</small>
+          </span>
+        </>
+      }
+      nav={[
+        { href: '/cafe', label: 'Live orders', icon: 'bell', badge: today?.active },
+        { href: '/cafe/menu', label: 'Menu & stock', icon: 'menu' },
+        { href: '/cafe/history', label: 'Order history', icon: 'history' },
+        ...(isAdmin ? [{ href: '/admin/cafes', label: 'Back to admin', icon: 'back' as const }] : []),
+      ]}
+      footer={
+        <>
+          <span className="side-clock">{now ? clock(now) : ''}</span>
+          <button className="side-out side-hide-sm" onClick={toggleFullscreen} title="Fullscreen (TV mode)" aria-label="Fullscreen"><Icon name="expand" size={18} /></button>
+          <button className="side-out" onClick={logout} title="Sign out" aria-label="Sign out"><Icon name="logout" size={18} /></button>
+        </>
+      }
+    >
+      <button
+        role="switch"
+        aria-checked={cafe.acceptingOrders}
+        className={`side-accept${cafe.acceptingOrders ? ' on' : ''}`}
+        onClick={toggleAccepting}
+        disabled={busy}
+      >
+        <span>{cafe.acceptingOrders ? 'Accepting orders' : 'Not accepting'}</span>
+        <span className={`switch${cafe.acceptingOrders ? ' on' : ''}`} aria-hidden />
+      </button>
+      {today && (
+        <div className="side-today">
+          <div className="cap">Today</div>
+          <div><span>Orders</span><b>{today.orders}</b></div>
+          <div><span>Sales</span><b>{rupees(today.sales)}</b></div>
+          <div><span>Cash collected</span><b>{rupees(today.codCollected)}</b></div>
+        </div>
+      )}
+    </Sidebar>
   );
 }

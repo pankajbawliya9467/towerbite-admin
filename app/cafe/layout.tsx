@@ -6,7 +6,6 @@ import type { CafeWithMenu, Profile } from '@/lib/types';
 import { Gate } from '@/components/Gate';
 import { CafeContext, adminCafe } from '@/components/CafeContext';
 import { CafeHeader } from './CafeHeader';
-import styles from './cafe.module.css';
 
 export default function CafeLayout({ children }: { children: ReactNode }) {
   return <Gate roles={['cafe_staff', 'super_admin']}>{(me) => <CafeShell me={me}>{children}</CafeShell>}</Gate>;
@@ -33,9 +32,9 @@ function CafeShell({ me, children }: { me: Profile; children: ReactNode }) {
   if (!cafe) return null;
   return (
     <CafeContext.Provider value={{ cafe, setCafe, isAdmin }}>
-      <div className={styles.shell}>
+      <div className="app tv">
         <CafeHeader />
-        {children}
+        <div className="main">{children}</div>
       </div>
     </CafeContext.Provider>
   );

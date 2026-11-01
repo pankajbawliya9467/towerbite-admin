@@ -45,8 +45,9 @@ export default function CafesPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
         {cafes.data?.map((c) => (
           <div key={c.id} className="card" style={{ overflow: 'hidden' }}>
-            <div style={{ height: 132, background: c.coverColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 56 }}>
+            <div style={{ height: 132, background: c.coverColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 56, position: 'relative' }}>
               {c.imageUrl ? <img src={c.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.emoji}
+              {c.logoUrl && <img src={c.logoUrl} alt="" style={{ position: 'absolute', left: 14, bottom: -22, width: 52, height: 52, borderRadius: 14, objectFit: 'cover', background: '#fff', boxShadow: '0 0 0 3px #fff' }} />}
             </div>
             <div style={{ padding: '20px 22px 22px' }}>
               <div className="row" style={{ gap: 12 }}>

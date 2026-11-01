@@ -11,7 +11,7 @@ import { ImageField } from '@/components/ImageField';
 export type CafeDraft = Partial<Cafe> & { locationId: string };
 const TAGS = ['coffee', 'snacks', 'meals', 'healthy'];
 const defaults = {
-  name: '', slug: '', cuisines: '', place: '', emoji: '☕', coverColor: '#FDEBDD', phone: null, imageUrl: null,
+  name: '', slug: '', cuisines: '', place: '', emoji: '☕', coverColor: '#FDEBDD', phone: null, imageUrl: null, logoUrl: null,
   etaMin: 10, etaMax: 15, tags: [] as string[], isOpen: true, acceptingOrders: true,
 };
 
@@ -26,7 +26,7 @@ export function CafeForm({ draft, locations, onClose, onSaved }: {
   async function save() {
     const body = {
       locationId: d.locationId, name: d.name, slug: d.slug, cuisines: d.cuisines, place: d.place, emoji: d.emoji,
-      coverColor: d.coverColor, phone: d.phone || null, imageUrl: d.imageUrl, etaMin: Number(d.etaMin), etaMax: Number(d.etaMax),
+      coverColor: d.coverColor, phone: d.phone || null, imageUrl: d.imageUrl, logoUrl: d.logoUrl, etaMin: Number(d.etaMin), etaMax: Number(d.etaMax),
       tags: d.tags, isOpen: d.isOpen, acceptingOrders: d.acceptingOrders,
     };
     if (d.id) await api.patch(`/v1/admin/cafes/${d.id}`, body);
@@ -82,7 +82,10 @@ export function CafeForm({ draft, locations, onClose, onSaved }: {
           ))}
         </div>
       </Field>
-      <Field label="Cover image" full>
+      <Field label="Logo · square, 512×512">
+        <ImageField value={d.logoUrl} onChange={(url) => set('logoUrl', url)} folder="cafes" emoji={d.emoji} color={d.coverColor} />
+      </Field>
+      <Field label="Cover photo · wide, 1200×800">
         <ImageField value={d.imageUrl} onChange={(url) => set('imageUrl', url)} folder="cafes" emoji={d.emoji} color={d.coverColor} />
       </Field>
       <SwitchRow label="Open" on={d.isOpen} onChange={(v) => set('isOpen', v)} />

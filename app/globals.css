@@ -249,8 +249,10 @@ select.field {
 .nav-progress.done { opacity: 0; width: 100%; transition: width .2s ease, opacity .25s ease .15s; }
 .btn, .pill, .add, .cart-btn, .side-nav a, .menu-item, .chip { transition: transform .08s ease, background-color .15s ease, opacity .15s ease; }
 .btn:active:not(:disabled), .pill:active, .add:active:not(:disabled), .cart-btn:active, .side-nav a:active, .menu-item:active { transform: scale(.97); }
-main.page, main[class*="page"], main[class*="board"] { animation: tb-in .22s ease both; }
-@keyframes tb-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+/* Opacity only, and no fill-mode: a transform (or a kept animation) on the page would make popups
+   position against the page instead of the screen, pushing modals down. */
+main.page, main[class*="page"], main[class*="board"] { animation: tb-in .2s ease; }
+@keyframes tb-in { from { opacity: 0; } to { opacity: 1; } }
 .skel-block { background: linear-gradient(90deg, #ecebe6 0%, #f4f3ef 50%, #ecebe6 100%); background-size: 200% 100%; animation: skel 1.2s ease-in-out infinite; border-radius: 16px; }
 @keyframes skel { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) {

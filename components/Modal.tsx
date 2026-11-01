@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
 
 export function Modal({ title, onClose, wide, children }: {
@@ -11,7 +12,8 @@ export function Modal({ title, onClose, wide, children }: {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  return (
+  // Rendered on <body>, so the dialog is always centred on the screen whatever the page around it does.
+  return createPortal(
     <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className={`card modal${wide ? ' wide' : ''}`} role="dialog" aria-label={title}>
         <div className="row" style={{ marginBottom: 22 }}>
@@ -20,6 +22,7 @@ export function Modal({ title, onClose, wide, children }: {
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

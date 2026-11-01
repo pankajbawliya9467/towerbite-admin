@@ -6,14 +6,19 @@ import { api } from './api';
  * GET `path` (skipped when null). Returns the data, an error message and a reload function.
  * With `pollMs`, it re-loads that often while the tab is visible (live dashboards).
  */
+/** Last data per path, so going back to a page shows it at once while it refreshes. */
+const memory = new Map<string, unknown>();
+
 export function useLoad<T>(path: string | null, pollMs?: number) {
-  const [data, setData] = useState<T | null>(null);
+  const [data, setData] = useState<T | null>(() => (path ? ((memory.get(path) as T) ?? null) : null));
   const [error, setError] = useState('');
 
   const reload = useCallback(async () => {
     if (!path) return;
     try {
-      setData(await api.get<T>(path));
+      const fresh = await api.get<T>(path);
+      memory.set(path, fresh);
+      setData(fresh);
       setError('');
     } catch (e) {
       setError((e as Error).message);
@@ -21,7 +26,7 @@ export function useLoad<T>(path: string | null, pollMs?: number) {
   }, [path]);
 
   useEffect(() => {
-    setData(null);
+    setData(path ? ((memory.get(path) as T) ?? null) : null);
     void reload();
   }, [reload]);
 

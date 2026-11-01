@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { connection } from 'next/server';
+import { Suspense } from 'react';
+import { NavProgress } from '@/components/NavProgress';
 import { SessionProvider } from '@/components/Session';
 import './globals.css';
 
@@ -17,6 +19,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body>
+        <Suspense fallback={null}>
+          <NavProgress />
+        </Suspense>
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>

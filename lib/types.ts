@@ -13,6 +13,8 @@ export type Order = {
   cafe: { id: string; slug: string; name: string; emoji: string; coverColor: string; place: string };
   location: { id: string; slug: string; name: string };
   items: OrderItem[];
+  /** Set when this is a team order (one order for several people). */
+  team: { code: string; name: string; deliverTo: string; people: number } | null;
 };
 
 export type Cafe = {
@@ -51,4 +53,17 @@ export type CafeReport = {
   peakHour: { hour: number; orders: number } | null;
   topItems: { name: string; qty: number; sales: number; share: number; rising: boolean }[];
   companies: { name: string; orders: number; sales: number }[];
+};
+
+export type LunchSlot = { slot: string; plates: number };
+export type Lunch = {
+  id: string; cafeId: string; day: string; name: string; items: string; price: number; isVeg: boolean; plates: number;
+  closesAt: string; cancelUntil: string; slots: string[]; isActive: boolean; booked: number; left: number; bookable: boolean;
+  bySlot: LunchSlot[];
+};
+export type LunchBookingStatus = 'booked' | 'out' | 'delivered' | 'cancelled';
+export type LunchBooking = {
+  id: string; bookingNo: number; lunchId: string; day: string; slot: string; qty: number; price: number; total: number;
+  status: LunchBookingStatus; customerName: string; customerPhone: string | null; address: Address; note: string | null;
+  createdAt: string; lunch: { name: string; items: string; isVeg: boolean };
 };

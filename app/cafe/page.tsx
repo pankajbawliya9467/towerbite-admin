@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
-import { audioReady, chime, unlockAudio } from '@/lib/chime';
+import { audioReady, chime, getSoundSettings, unlockAudio } from '@/lib/chime';
 import { onCafeOrders } from '@/lib/supabase';
 import type { Order, OrderStatus } from '@/lib/types';
 import { useCafe } from '@/components/CafeContext';
@@ -50,7 +50,7 @@ export default function BoardPage() {
     void load();
     const poll = setInterval(load, 10000);
     const tick = setInterval(() => setNow(Date.now()), 20000);
-    const remind = setInterval(() => waiting.current && chime(), REMIND_MS);
+    const remind = setInterval(() => waiting.current && getSoundSettings().repeat && chime(), REMIND_MS);
     const off = onCafeOrders(cafe.id, load);
     const unlock = () => void unlockAudio().then(() => setSoundOn(audioReady()));
     window.addEventListener('pointerdown', unlock);

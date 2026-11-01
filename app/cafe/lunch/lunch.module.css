@@ -1,0 +1,47 @@
+.page { display: flex; flex-direction: column; gap: 16px; }
+.days { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.days button { flex: none; min-width: 108px; padding: 10px 14px; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1px #E3E0DA; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; }
+.days b { font-size: 14px; font-weight: 800; }
+.days span { font-size: 12px; font-weight: 600; color: var(--sub); }
+.days small { margin-top: 4px; font-size: 11px; font-weight: 800; color: #9A3412; }
+.days button.dayOn { background: var(--text); color: #fff; box-shadow: none; }
+.days button.dayOn span, .days button.dayOn small { color: #E7E5E4; }
+.cols { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+.main { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.side { flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.empty { padding: 28px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.empty b { font-size: 17px; }
+.empty span { color: var(--sub); font-size: 14px; }
+.lunch { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.lunchTop { display: flex; gap: 12px; align-items: flex-start; }
+.lunchTop :global(.veg) { margin-top: 5px; }
+.lunchName { font-size: 17px; font-weight: 800; }
+.lunchName span { color: var(--sub); font-weight: 700; }
+.lunchItems { margin-top: 3px; color: #4A4A4A; font-size: 14px; }
+.lunchMeta { margin-top: 6px; color: var(--sub); font-size: 12px; font-weight: 600; }
+.progress { display: flex; flex-direction: column; gap: 6px; }
+.progressText { font-size: 13px; color: var(--sub); font-weight: 600; }
+.progressText b { color: var(--text); font-size: 15px; }
+.track { height: 8px; border-radius: 4px; background: #F1EFEA; overflow: hidden; }
+.track div { height: 100%; border-radius: 4px; }
+.lunchActions { display: flex; flex-wrap: wrap; gap: 8px; }
+.lunchActions :global(.btn) { height: 38px; font-size: 13px; padding: 0 12px; gap: 6px; }
+.cardHead { padding: 16px 18px 6px; font-size: 15px; font-weight: 800; }
+.plan { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.slot { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; background: var(--bg); }
+.slotPlates { font-size: 22px; font-weight: 800; }
+.slot :global(.btn) { height: 38px; font-size: 13px; }
+.how { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #4A4A4A; }
+.noteSm { margin-top: 4px; font-size: 12px; font-weight: 700; color: #78350F; }
+.seg { display: flex; gap: 8px; }
+.seg button { flex: 1; height: 52px; border-radius: 14px; border: 1.5px solid #E3E0DA; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px; background: var(--surface); }
+.seg button.segOn { border-color: var(--accent); background: var(--accentSoft); }
+.slots { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.slotChip { height: 40px; padding: 0 6px 0 12px; border-radius: 10px; background: var(--text); color: #fff; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+.slotChip button { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #D6D3CD; }
+.slotChip button:hover { background: rgba(255,255,255,.15); color: #fff; }
+.slotAdd { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.slotAdd :global(.field) { width: 130px; height: 40px; }
+.slotAdd span { font-size: 13px; color: var(--sub); font-weight: 600; }
+.slotAdd :global(.btn) { height: 40px; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 12px 18px; border-radius: 12px; font-weight: 700; font-size: 14px; z-index: 50; max-width: calc(100% - 32px); }

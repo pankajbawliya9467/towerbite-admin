@@ -10,7 +10,8 @@
 .who { font-size: 14px; color: var(--sub); margin-top: 2px; }
 .items { font-size: 17px; margin-top: 12px; line-height: 1.6; }
 .items b { font-weight: 800; }
-.note { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: var(--amberSoft); color: #78350F; font-size: 13px; font-weight: 700; }
+.team { margin-top: 6px; display: inline-flex; padding: 4px 9px; border-radius: 8px; background: #EEF2FF; color: #3730A3; font-size: 12px; font-weight: 800; }
+.note { white-space: pre-line; margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: var(--amberSoft); color: #78350F; font-size: 13px; font-weight: 700; }
 .cod { background: var(--chip); color: var(--text); font-size: 13px; padding: 6px 10px; border-radius: 8px; }
 .actions { display: flex; gap: 8px; margin-top: 14px; }
 .actions :global(.btn) { height: 48px; border-radius: 14px; }

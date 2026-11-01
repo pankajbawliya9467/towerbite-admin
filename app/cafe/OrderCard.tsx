@@ -27,6 +27,7 @@ export function OrderCard({ order, now, fresh, onAction }: {
           ? <span className={styles.rider}>with {order.riderName}</span>
           : <span className={styles.ago} style={{ color: tone }}>{timeAgo(order.createdAt, now)}</span>}
       </div>
+      {order.team && <div className={styles.team}>Team order · {order.team.people} people · {order.team.name}</div>}
       <div className={styles.addr}>{addressLine(order.address, out ? 'company' : 'desk')}</div>
       {out ? (
         <>

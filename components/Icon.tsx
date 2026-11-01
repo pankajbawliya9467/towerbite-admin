@@ -23,6 +23,9 @@ const PATHS = {
   menu: <><path d="M4 6h16M4 12h16M4 18h10" /></>,
   chart: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
   download: <><path d="M12 4v12M7 11l5 5 5-5" /><path d="M4 20h16" /></>,
+  meal: <><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4" /></>,
+  play: <path d="M8 5v14l11-7z" />,
+  send: <><path d="M4 12l16-8-6 16-3-7z" /></>,
   print: <><path d="M6 9V3h12v6" /><rect x="3" y="9" width="18" height="8" rx="2" /><path d="M7 14h10v7H7z" /></>,
 };
 

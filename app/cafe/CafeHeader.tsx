@@ -7,6 +7,7 @@ import { useCafe } from '@/components/CafeContext';
 import { useSession } from '@/components/Session';
 import { Icon } from '@/components/Icon';
 import { Sidebar } from '@/components/Sidebar';
+import { SoundSettings } from './SoundSettings';
 
 type Today = { orders: number; delivered: number; sales: number; codCollected: number; active: number };
 
@@ -57,6 +58,7 @@ export function CafeHeader() {
       nav={[
         { href: '/cafe', label: 'Live orders', icon: 'bell', badge: today?.active },
         { href: '/cafe/menu', label: 'Menu & stock', icon: 'menu' },
+        { href: '/cafe/lunch', label: 'Lunch', icon: 'meal' },
         { href: '/cafe/history', label: 'Order history', icon: 'history' },
         { href: '/cafe/reports', label: 'Reports', icon: 'chart' },
         ...(isAdmin ? [{ href: '/admin/cafes', label: 'Back to admin', icon: 'back' as const }] : []),
@@ -79,6 +81,7 @@ export function CafeHeader() {
         <span>{cafe.acceptingOrders ? 'Accepting orders' : 'Not accepting'}</span>
         <span className={`switch${cafe.acceptingOrders ? ' on' : ''}`} aria-hidden />
       </button>
+      <SoundSettings />
       {today && (
         <div className="side-today">
           <div className="cap">Today</div>

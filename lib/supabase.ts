@@ -15,7 +15,7 @@ export function supabase(): SupabaseClient | null {
  * the database only lets that cafe's staff (or a super admin) join.
  * Returns an unsubscribe function (no-op without Supabase).
  */
-export function onCafeOrders(cafeId: string, cb: () => void): () => void {
+export function onCafeOrders(cafeId: string, cb: () => void, event: 'order' | 'lunch' = 'order'): () => void {
   const sb = supabase();
   if (!sb) return () => {};
   let channel: ReturnType<SupabaseClient['channel']> | null = null;
@@ -24,7 +24,7 @@ export function onCafeOrders(cafeId: string, cb: () => void): () => void {
     const { data } = await sb.auth.getSession();
     if (closed || !data.session) return; // polling still works
     await sb.realtime.setAuth();
-    channel = sb.channel(`cafe:${cafeId}`, { config: { private: true } }).on('broadcast', { event: 'order' }, cb).subscribe();
+    channel = sb.channel(`cafe:${cafeId}`, { config: { private: true } }).on('broadcast', { event }, cb).subscribe();
   })();
   return () => {
     closed = true;

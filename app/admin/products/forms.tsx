@@ -6,23 +6,42 @@ import { FormModal } from '@/components/FormModal';
 import { Field } from '@/components/Field';
 import { SwitchRow } from '@/components/Switch';
 import { ImageField } from '@/components/ImageField';
+import { categoryTree } from '@/lib/menuTree';
 
-export function CategoryForm({ draft, onClose, onSaved }: {
-  draft: Partial<Category>; onClose: () => void; onSaved: () => Promise<void>;
+export function CategoryForm({ draft, categories, onClose, onSaved }: {
+  draft: Partial<Category>; categories: Category[]; onClose: () => void; onSaved: () => Promise<void>;
 }) {
   const [name, setName] = useState(draft.name ?? '');
   const [sort, setSort] = useState(draft.sort ?? 0);
+  const [parentId, setParentId] = useState<string>(draft.parentId ?? '');
+  // Only one level: a parent must be a main category, and a category with subs stays a main one.
+  const mains = categories.filter((c) => !c.parentId && c.id !== draft.id);
+  const hasSubs = !!draft.id && categories.some((c) => c.parentId === draft.id);
+  const parent = categories.find((c) => c.id === parentId);
 
   async function save() {
-    if (draft.id) await api.patch(`/v1/admin/categories/${draft.id}`, { name, sort });
-    else await api.post('/v1/admin/categories', { cafeId: draft.cafeId, name, sort });
+    const body = { name, sort, parentId: parentId || null };
+    if (draft.id) await api.patch(`/v1/admin/categories/${draft.id}`, body);
+    else await api.post('/v1/admin/categories', { cafeId: draft.cafeId, ...body });
     await onSaved();
   }
 
+  const title = draft.id ? `Edit ${draft.name}` : parent ? `New sub-category in ${parent.name}` : 'New category';
   return (
-    <FormModal title={draft.id ? 'Edit category' : 'New category'} onClose={onClose} onSubmit={save}>
-      <Field label="Name" full><input className="field" required autoFocus value={name} placeholder="Hot drinks" onChange={(e) => setName(e.target.value)} /></Field>
-      <Field label="Order on the menu" full><input className="field" type="number" value={sort} onChange={(e) => setSort(Number(e.target.value))} /></Field>
+    <FormModal title={title} onClose={onClose} onSubmit={save}>
+      <Field label="Name" full>
+        <input className="field" required autoFocus value={name} maxLength={40} placeholder={parent ? 'Burgers' : 'Snacks'} onChange={(e) => setName(e.target.value)} />
+      </Field>
+      <Field label="Inside" full>
+        <select className="field" value={parentId} disabled={hasSubs} onChange={(e) => setParentId(e.target.value)}>
+          <option value="">— Main category (shows as a tab) —</option>
+          {mains.map((c) => <option key={c.id} value={c.id}>Sub-category of {c.name}</option>)}
+        </select>
+        {hasSubs && <div className="small" style={{ marginTop: 6 }}>This category has sub-categories, so it stays a main category.</div>}
+      </Field>
+      <Field label={parentId ? 'Order inside the category' : 'Order on the menu'} full>
+        <input className="field" type="number" value={sort} onChange={(e) => setSort(Number(e.target.value))} />
+      </Field>
     </FormModal>
   );
 }
@@ -32,8 +51,9 @@ export function ItemForm({ draft, cafe, categories, onClose, onSaved }: {
 }) {
   const [d, setD] = useState({
     name: '', description: '', price: 0, isVeg: true, emoji: '🍽️', imageUrl: null as string | null, isAvailable: true,
-    isPopular: false, sort: 0, categoryId: categories[0]?.id ?? null, ...draft,
+    isPopular: false, sort: 0, ...draft, categoryId: draft.categoryId ?? (draft.id ? null : categories[0]?.id ?? null),
   });
+  const tree = categoryTree(categories);
   const set = <K extends keyof typeof d>(k: K, v: (typeof d)[K]) => setD((x) => ({ ...x, [k]: v }));
 
   async function save() {
@@ -63,7 +83,10 @@ export function ItemForm({ draft, cafe, categories, onClose, onSaved }: {
       <Field label="Category">
         <select className="field" value={d.categoryId ?? ''} onChange={(e) => set('categoryId', e.target.value || null)}>
           <option value="">No category</option>
-          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {tree.map((m) => [
+            <option key={m.id} value={m.id}>{m.name}</option>,
+            ...m.subs.map((s) => <option key={s.id} value={s.id}>{'\u00A0\u00A0\u00A0'}↳ {m.name} › {s.name}</option>),
+          ])}
         </select>
       </Field>
       <Field label="Order in category"><input className="field" type="number" value={d.sort} onChange={(e) => set('sort', Number(e.target.value))} /></Field>

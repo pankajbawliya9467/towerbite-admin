@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import type { CafeWithMenu, MenuItem } from '@/lib/types';
-import { MenuList } from '@/components/MenuList';
+import { MenuManager } from '@/components/MenuManager';
 
 export default function CafeMenuPage() {
   const [menu, setMenu] = useState<CafeWithMenu | null>(null);
@@ -23,10 +23,10 @@ export default function CafeMenuPage() {
       <div className="pagehead">
         <div>
           <div className="h1">Menu</div>
-          <p className="sub">Switch an item off when it runs out. Customers can order it again when you switch it back on.</p>
+          <p className="sub">Switch an item off when it runs out. Customers can order it again when you switch it back on. Search or pick a category to find an item fast.</p>
         </div>
       </div>
-      {menu && <MenuList menu={menu} onAvailable={setAvailable} />}
+      {menu && <MenuManager categories={menu.categories} items={menu.items} coverColor={menu.coverColor} onAvailable={setAvailable} />}
     </main>
   );
 }

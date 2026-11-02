@@ -58,8 +58,10 @@ export function CafeHeader() {
       nav={[
         { href: '/cafe', label: 'Live orders', icon: 'bell', badge: today?.active },
         { href: '/cafe/menu', label: 'Menu & stock', icon: 'menu' },
+        { href: '/cafe/combos', label: 'Combos', icon: 'box' },
         { href: '/cafe/lunch', label: 'Lunch', icon: 'meal' },
         { href: '/cafe/history', label: 'Order history', icon: 'history' },
+        { href: '/cafe/ratings', label: 'Ratings', icon: 'star' },
         { href: '/cafe/reports', label: 'Reports', icon: 'chart' },
         ...(isAdmin ? [{ href: '/admin/cafes', label: 'Back to admin', icon: 'back' as const }] : []),
       ]}

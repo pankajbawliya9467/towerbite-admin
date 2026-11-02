@@ -4,7 +4,7 @@ export type Profile = { id: string; name: string; phone: string | null; email: s
 
 export type OrderStatus = 'placed' | 'preparing' | 'out_for_delivery' | 'delivered' | 'rejected' | 'cancelled';
 export type Address = { tower: string; floor: string; company: string; desk: string };
-export type OrderItem = { id: string; menuItemId: string; name: string; emoji: string; price: number; qty: number };
+export type OrderItem = { id: string; menuItemId: string | null; name: string; emoji: string; price: number; qty: number; comboId?: string | null; detail?: string | null };
 export type Order = {
   id: string; orderNo: number; status: OrderStatus; userId: string; itemsTotal: number; deliveryFee: number; total: number;
   paymentMethod: 'cod'; codCollected: boolean; customerName: string; customerPhone: string; address: Address;
@@ -22,7 +22,7 @@ export type Cafe = {
   coverColor: string; imageUrl: string | null; logoUrl: string | null; phone: string | null; rating: number; ratingCount: number;
   etaMin: number; etaMax: number; isOpen: boolean; acceptingOrders: boolean; tags: string[]; sort: number;
 };
-export type Category = { id: string; cafeId: string; name: string; sort: number };
+export type Category = { id: string; cafeId: string; parentId: string | null; name: string; sort: number };
 export type MenuItem = {
   id: string; cafeId: string; categoryId: string | null; name: string; description: string; price: number; isVeg: boolean;
   emoji: string; imageUrl: string | null; isAvailable: boolean; isPopular: boolean; sort: number;
@@ -66,4 +66,21 @@ export type LunchBooking = {
   id: string; bookingNo: number; lunchId: string; day: string; slot: string; qty: number; price: number; total: number;
   status: LunchBookingStatus; customerName: string; customerPhone: string | null; address: Address; note: string | null;
   createdAt: string; lunch: { name: string; items: string; isVeg: boolean };
+};
+
+export type Combo = {
+  id: string; name: string; description: string; price: number; mrp: number; emoji: string; imageUrl: string | null;
+  startTime: string | null; endTime: string | null; days: number[]; isActive: boolean; sort: number; availableNow: boolean;
+  items: { menuItemId: string; name: string; emoji: string; price: number; qty: number; isAvailable: boolean }[];
+  soldWeek?: number;
+};
+export type ComboIdea = { a: { menuItemId: string; name: string; price: number }; b: { menuItemId: string; name: string; price: number }; orders: number; pct: number };
+export type RatingRow = {
+  orderId: string; orderNo: number; stars: number; tags: string[]; comment: string; createdAt: string;
+  resolvedAt: string | null; sorrySentAt: string | null; firstName: string; place: string; items: { name: string; liked: boolean }[];
+};
+export type RatingReport = {
+  days: number; avg: number | null; prevAvg: number | null; count: number; low: number; delivered: number;
+  onTimePct: number | null; avgMinutes: number | null; dist: { stars: number; n: number }[]; tags: { tag: string; n: number }[];
+  items: { menuItemId: string; name: string; liked: number; total: number }[]; list: RatingRow[];
 };

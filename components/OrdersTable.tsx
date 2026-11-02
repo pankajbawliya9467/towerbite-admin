@@ -29,7 +29,7 @@ export function OrdersTable({ orders, showCafe, showDate }: { orders: Order[]; s
             {showCafe && <td className="nowrap">{o.cafe.emoji} {o.cafe.name}<div className="small">{o.location.name}</div></td>}
             <td className="nowrap">{o.customerName || '—'}<div className="small">{o.customerPhone}</div></td>
             <td className="nowrap">{addressLine(o.address)}<div className="small">{o.address.company}</div></td>
-            <td style={{ minWidth: 200 }}>{o.items.map((i) => `${i.qty} × ${i.name}`).join(', ')}</td>
+            <td style={{ minWidth: 200 }}>{o.items.map((i) => `${i.qty} × ${i.name}${i.detail ? ` (${i.detail})` : ''}`).join(', ')}</td>
             <td className="num" style={{ fontWeight: 600 }}>{rupees(o.total)}</td>
             <td className="nowrap">
               <span className={`badge ${STATUS[o.status].cls}`}>{STATUS[o.status].label}</span>

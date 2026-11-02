@@ -42,7 +42,12 @@ export function OrderCard({ order, now, fresh, onAction }: {
         <>
           {who && <div className={styles.who}>{who}</div>}
           <div className={styles.items}>
-            {order.items.map((i) => <div key={i.id}><b>{i.qty}</b> {i.name}</div>)}
+            {order.items.map((i) => (
+              <div key={i.id}>
+                <b>{i.qty}</b> {i.comboId && <span className="badge acc" style={{ fontSize: 10, padding: '1px 6px', marginRight: 4 }}>COMBO</span>}{i.name}
+                {i.detail && <div className="small" style={{ marginLeft: 22 }}>{i.detail}</div>}
+              </div>
+            ))}
           </div>
           {order.note && <div className={styles.note}>Note: {order.note}</div>}
           <div className="row" style={{ marginTop: 12 }}>

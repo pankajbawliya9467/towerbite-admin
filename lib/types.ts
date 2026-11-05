@@ -8,7 +8,7 @@ export type OrderItem = { id: string; menuItemId: string | null; name: string; e
 export type Order = {
   id: string; orderNo: number; status: OrderStatus; userId: string; itemsTotal: number; deliveryFee: number; total: number;
   paymentMethod: 'cod'; codCollected: boolean; customerName: string; customerPhone: string; address: Address;
-  note: string | null; riderName: string | null; rejectReason: string | null; createdAt: string; acceptedAt: string | null;
+  note: string | null; riderName: string | null; riderPhone?: string | null; rejectReason: string | null; createdAt: string; acceptedAt: string | null;
   outAt: string | null; deliveredAt: string | null; cancelledAt: string | null; rejectedAt: string | null;
   cafe: { id: string; slug: string; name: string; emoji: string; coverColor: string; place: string };
   location: { id: string; slug: string; name: string };
@@ -84,3 +84,5 @@ export type RatingReport = {
   onTimePct: number | null; avgMinutes: number | null; dist: { stars: number; n: number }[]; tags: { tag: string; n: number }[];
   items: { menuItemId: string; name: string; liked: number; total: number }[]; list: RatingRow[];
 };
+
+export type Rider = { id: string; name: string; phone: string | null; sort: number };

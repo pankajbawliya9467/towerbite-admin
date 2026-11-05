@@ -54,3 +54,21 @@
   .soundPrompt { left: 16px; right: 16px; bottom: 16px; }
   .toast { bottom: 84px; width: calc(100% - 32px); text-align: center; }
 }
+
+/* Select several orders, delivery staff buttons, batch bar */
+.pick { width: 20px; height: 20px; margin: 0 10px 0 0; vertical-align: -3px; accent-color: var(--accent); cursor: pointer; }
+.selected { box-shadow: 0 0 0 3px var(--text); }
+.sendWith { margin-top: 14px; }
+.sendLabel { display: block; font-size: 12px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+.riderBtns { display: flex; gap: 6px; flex-wrap: wrap; }
+.riderBtns :global(.btn) { flex: 1 1 0; min-width: 0; height: 46px; border-radius: 12px; padding: 0 10px; overflow: hidden; text-overflow: ellipsis; }
+.batchBar {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 58; background: var(--text); color: #fff;
+  border-radius: 18px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.25);
+  max-width: calc(100% - 32px); flex-wrap: wrap;
+}
+.batchBar b { font-size: 15px; margin-right: 4px; }
+.batchBar :global(.btn) { height: 42px; border-radius: 12px; }
+.batchBar .clear { color: #D6D3CD; font-weight: 700; font-size: 14px; padding: 0 8px; }
+.pending { opacity: .7; pointer-events: none; }
+@media (max-width: 760px) { .batchBar { bottom: 16px; left: 16px; right: 16px; transform: none; max-width: none; } }

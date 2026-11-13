@@ -42,6 +42,7 @@ function AdminSidebar({ name, onLogout }: { name: string; onLogout: () => void }
         { href: '/admin/staff', label: 'Staff', icon: 'team' },
         { href: '/admin/users', label: 'Users', icon: 'user' },
         { href: '/admin/notifications', label: 'Notifications', icon: 'bell' },
+        { href: '/admin/requests', label: 'Account requests', icon: 'trash' },
       ]}
       footer={
         <>

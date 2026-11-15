@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { getToken, signOut } from '@/lib/auth';
+import { resetLive } from '@/lib/live';
 import type { Profile } from '@/lib/types';
 
 type State = { status: 'loading' } | { status: 'signedOut' } | { status: 'ready'; me: Profile };
@@ -24,7 +25,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setState({ status: 'ready', me });
       return me;
     } catch (e) {
-      if (e instanceof ApiError && e.status === 401) await signOut();
+      if (e instanceof ApiError && e.status === 401) (await signOut(), resetLive());
       setState({ status: 'signedOut' });
       return null;
     }
@@ -32,6 +33,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await signOut();
+    resetLive();
     setState({ status: 'signedOut' });
     router.replace('/login');
   }, [router]);

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { audioReady, chime, getSoundSettings, unlockAudio } from '@/lib/chime';
-import { onCafeOrders } from '@/lib/supabase';
+import { onCafeOrders } from '@/lib/live';
 import type { Order, OrderStatus, Rider } from '@/lib/types';
 import { useCafe } from '@/components/CafeContext';
 import { OrderCard, type Action } from './OrderCard';

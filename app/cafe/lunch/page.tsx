@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { addressLine, rupees, todayIST } from '@/lib/format';
-import { onCafeOrders } from '@/lib/supabase';
+import { onCafeOrders } from '@/lib/live';
 import { useLoad } from '@/lib/useLoad';
 import type { Lunch, LunchBooking } from '@/lib/types';
 import { useCafe } from '@/components/CafeContext';

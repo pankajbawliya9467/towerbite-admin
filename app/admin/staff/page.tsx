@@ -23,6 +23,16 @@ export default function StaffPage() {
     await staff.reload();
   }
 
+  async function newPassword(s: StaffRow) {
+    const pw = prompt(`New password for ${s.name || s.email} (at least 8 characters). They will be logged out everywhere.`);
+    if (pw == null) return;
+    if (pw.length < 8) return alert('The password needs at least 8 characters.');
+    await api
+      .post(`/v1/admin/staff/${s.userId}/password`, { password: pw })
+      .then(() => alert(`Done. Share the new password with ${s.name || s.email} privately.`))
+      .catch((e: Error) => alert(e.message));
+  }
+
   return (
     <main className="page">
       <PageHead title="Staff logins" sub="Cafe staff see their own cafe's live board and menu. Admins see everything.">
@@ -41,7 +51,8 @@ export default function StaffPage() {
                 <td>{s.cafeName ?? <span style={{ color: 'var(--faint)' }}>All cafes</span>}</td>
                 <td style={{ color: 'var(--sub)' }}>{shortDate(s.createdAt)}</td>
                 <td className="num">
-                  {s.userId !== myId && <button className="link" style={{ color: 'var(--red)' }} onClick={() => remove(s)}>Remove</button>}
+                  <button className="link" onClick={() => newPassword(s)}>New password</button>
+                  {s.userId !== myId && <button className="link" style={{ color: 'var(--red)', marginLeft: 14 }} onClick={() => remove(s)}>Remove</button>}
                 </td>
               </tr>
             ))}

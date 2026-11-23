@@ -8,6 +8,7 @@ import { useLoad } from '@/lib/useLoad';
 import type { Lunch, LunchBooking } from '@/lib/types';
 import { useCafe } from '@/components/CafeContext';
 import { Field } from '@/components/Field';
+import { ImageField } from '@/components/ImageField';
 import { FormModal } from '@/components/FormModal';
 import { Icon } from '@/components/Icon';
 import { PageHead } from '@/components/PageHead';
@@ -126,6 +127,7 @@ export default function LunchPage() {
             return (
               <article key={l.id} className={`card ${styles.lunch}`}>
                 <div className={styles.lunchTop}>
+                  {l.imageUrl && <img src={l.imageUrl} alt="" style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'cover', flex: 'none' }} />}
                   <span className={`veg${l.isVeg ? '' : ' non'}`} aria-label={l.isVeg ? 'Veg' : 'Non-veg'} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className={styles.lunchName}>{l.name} <span>· {rupees(l.price)}</span></div>
@@ -242,6 +244,7 @@ function LunchForm({ state, today, onClose, onSaved }: {
     price: l.price ? String(l.price) : '',
     plates: l.plates ? String(l.plates) : '40',
     isVeg: l.isVeg ?? true,
+    imageUrl: l.imageUrl ?? null,
     closesAt: l.closesAt ?? '11:30',
     cancelUntil: l.cancelUntil ?? '10:30',
     slots: l.slots ?? DEFAULT_SLOTS,
@@ -266,7 +269,7 @@ function LunchForm({ state, today, onClose, onSaved }: {
 
   async function submit() {
     const body = {
-      day: v.day, name: v.name, items: v.items, price: Number(v.price), plates: Number(v.plates), isVeg: v.isVeg,
+      day: v.day, name: v.name, items: v.items, price: Number(v.price), plates: Number(v.plates), isVeg: v.isVeg, imageUrl: v.imageUrl,
       closesAt: v.closesAt, cancelUntil: v.cancelUntil, slots: v.slots, alsoOn,
     };
     if (!v.name.trim()) throw new Error('Give the lunch a name');
@@ -286,6 +289,9 @@ function LunchForm({ state, today, onClose, onSaved }: {
       </Field>
       <Field label="Day">
         <input className="field" type="date" min={today} value={v.day} onChange={(e) => set({ day: e.target.value })} required />
+      </Field>
+      <Field label="Photo · square works best" full>
+        <ImageField value={v.imageUrl} onChange={(url) => set({ imageUrl: url })} folder="cafe" emoji="🍱" color="#FDEBDD" />
       </Field>
       <Field label="What's included" full>
         <input className="field" value={v.items} maxLength={240} placeholder="Dal makhani, Paneer masala, Jeera rice, 3 roti, Salad" onChange={(e) => set({ items: e.target.value })} />

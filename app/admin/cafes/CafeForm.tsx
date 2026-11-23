@@ -7,12 +7,14 @@ import { FormModal } from '@/components/FormModal';
 import { Field } from '@/components/Field';
 import { SwitchRow } from '@/components/Switch';
 import { ImageField } from '@/components/ImageField';
+import { GeoPicker } from '@/components/GeoPicker';
 
 export type CafeDraft = Partial<Cafe> & { locationId: string };
 const TAGS = ['coffee', 'snacks', 'meals', 'healthy'];
 const defaults = {
   name: '', slug: '', cuisines: '', place: '', emoji: '☕', coverColor: '#FDEBDD', phone: null, imageUrl: null, logoUrl: null,
   etaMin: 10, etaMax: 15, tags: [] as string[], isOpen: true, acceptingOrders: true,
+  lat: null as number | null, lng: null as number | null, geoRadiusM: 300, geoCheck: false,
 };
 
 export function CafeForm({ draft, locations, onClose, onSaved }: {
@@ -28,7 +30,9 @@ export function CafeForm({ draft, locations, onClose, onSaved }: {
       locationId: d.locationId, name: d.name, slug: d.slug, cuisines: d.cuisines, place: d.place, emoji: d.emoji,
       coverColor: d.coverColor, phone: d.phone || null, imageUrl: d.imageUrl, logoUrl: d.logoUrl, etaMin: Number(d.etaMin), etaMax: Number(d.etaMax),
       tags: d.tags, isOpen: d.isOpen, acceptingOrders: d.acceptingOrders,
+      lat: d.lat, lng: d.lng, geoRadiusM: Number(d.geoRadiusM), geoCheck: d.geoCheck && d.lat != null,
     };
+    if (d.geoCheck && d.lat == null) throw new Error('Put the cafe on the map before turning on the location check.');
     if (d.id) await api.patch(`/v1/admin/cafes/${d.id}`, body);
     else await api.post('/v1/admin/cafes', body);
     await onSaved();
@@ -87,6 +91,19 @@ export function CafeForm({ draft, locations, onClose, onSaved }: {
       </Field>
       <Field label="Cover photo · wide, 1200×800">
         <ImageField value={d.imageUrl} onChange={(url) => set('imageUrl', url)} folder="cafes" emoji={d.emoji} color={d.coverColor} />
+      </Field>
+      <Field label="Where the cafe is" full>
+        <GeoPicker lat={d.lat} lng={d.lng} radius={Number(d.geoRadiusM)} onChange={(lat, lng) => setD((x) => ({ ...x, lat, lng }))} />
+      </Field>
+      <Field label={`Order only within · ${d.geoRadiusM} m of the pin`}>
+        <input type="range" min={100} max={1000} step={50} value={d.geoRadiusM} style={{ width: '100%', accentColor: 'var(--accent)' }}
+          onChange={(e) => set('geoRadiusM', Number(e.target.value))} />
+        <div className="small">GPS inside buildings is rough: 300 m works for most tech parks.</div>
+      </Field>
+      <Field label="Location check">
+        <SwitchRow label={d.geoCheck ? 'On · orders only from inside' : 'Off · anyone can order'} on={d.geoCheck}
+          onChange={(v) => set('geoCheck', v)} />
+        <div className="small" style={{ marginTop: 6 }}>Turn on after the new app is out: older app versions can't send their location.</div>
       </Field>
       <SwitchRow label="Open" on={d.isOpen} onChange={(v) => set('isOpen', v)} />
       <SwitchRow label="Accepting orders" on={d.acceptingOrders} onChange={(v) => set('acceptingOrders', v)} />

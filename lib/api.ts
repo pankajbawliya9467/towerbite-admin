@@ -58,11 +58,12 @@ export const api = {
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
   del: (path: string) => request<{ ok: true }>('DELETE', path),
+  /** Admins upload into any folder; cafe staff (folder `cafe`) into their own cafe's folder. */
   upload: (file: File, folder: string) => {
     const form = new FormData();
     form.append('folder', folder);
     form.append('file', file);
-    return request<{ url: string; path: string }>('POST', '/v1/admin/upload', form);
+    return request<{ url: string; path: string }>('POST', folder === 'cafe' ? '/v1/cafe/upload' : '/v1/admin/upload', form);
   },
 };
 

@@ -21,6 +21,7 @@ export type Cafe = {
   id: string; locationId: string; slug: string; name: string; cuisines: string; place: string; emoji: string;
   coverColor: string; imageUrl: string | null; logoUrl: string | null; phone: string | null; rating: number; ratingCount: number;
   etaMin: number; etaMax: number; isOpen: boolean; acceptingOrders: boolean; tags: string[]; sort: number; isActive: boolean;
+  lat: number | null; lng: number | null; geoRadiusM: number; geoCheck: boolean;
 };
 export type Category = { id: string; cafeId: string; parentId: string | null; name: string; sort: number };
 export type MenuItem = {
@@ -58,7 +59,7 @@ export type CafeReport = {
 export type LunchSlot = { slot: string; plates: number };
 export type Lunch = {
   id: string; cafeId: string; day: string; name: string; items: string; price: number; isVeg: boolean; plates: number;
-  closesAt: string; cancelUntil: string; slots: string[]; isActive: boolean; booked: number; left: number; bookable: boolean;
+  imageUrl: string | null; closesAt: string; cancelUntil: string; slots: string[]; isActive: boolean; booked: number; left: number; bookable: boolean;
   bySlot: LunchSlot[];
 };
 export type LunchBookingStatus = 'booked' | 'out' | 'delivered' | 'cancelled';

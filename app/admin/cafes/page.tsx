@@ -16,6 +16,7 @@ export default function CafesPage() {
   const locations = useLoad<Location[]>('/v1/admin/locations');
   const cafes = useLoad<Cafe[]>(`/v1/admin/cafes${qs({ locationId })}`);
   const [editing, setEditing] = useState<CafeDraft | null>(null);
+  const [ordering, setOrdering] = useState(false);
   const locName = (id: string) => locations.data?.find((l) => l.id === id)?.name ?? '';
 
   const go = (cafe: Cafe, path: string) => {
@@ -35,12 +36,22 @@ export default function CafesPage() {
         <button className="btn sm" disabled={!locations.data?.length}
           onClick={() => setEditing({ locationId: locationId || locations.data![0].id })}><Icon name="plus" /> Add cafe</button>
       </PageHead>
-      <div className="wrap" style={{ marginBottom: 24 }}>
-        <button className={`pill${!locationId ? ' on' : ''}`} onClick={() => setLocationId('')}>All locations</button>
-        {locations.data?.map((l) => (
-          <button key={l.id} className={`pill${locationId === l.id ? ' on' : ''}`} onClick={() => setLocationId(l.id)}>{l.name}</button>
-        ))}
+      <div className="row" style={{ marginBottom: 24, gap: 12, flexWrap: 'wrap' }}>
+        <div className="wrap">
+          <button className={`pill${!locationId ? ' on' : ''}`} onClick={() => (setLocationId(''), setOrdering(false))}>All locations</button>
+          {locations.data?.map((l) => (
+            <button key={l.id} className={`pill${locationId === l.id ? ' on' : ''}`} onClick={() => setLocationId(l.id)}>{l.name}</button>
+          ))}
+        </div>
+        <button className="btn sec sm" onClick={() => setOrdering(!ordering)} disabled={!locationId}
+          title={locationId ? undefined : 'Pick a building first'}>
+          {ordering ? 'Done' : 'Order in app'}
+        </button>
       </div>
+      {!locationId && <p className="small" style={{ margin: '-12px 0 20px' }}>Pick a building to change the order its cafes show in the app.</p>}
+      {ordering && locationId && cafes.data && (
+        <CafeOrder key={locationId} locationId={locationId} cafes={cafes.data} onSaved={cafes.reload} />
+      )}
       {cafes.error && <div className="err">{cafes.error}</div>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
         {cafes.data?.map((c) => (
@@ -74,5 +85,61 @@ export default function CafesPage() {
         <CafeForm draft={editing} locations={locations.data} onClose={() => setEditing(null)} onSaved={cafes.reload} />
       )}
     </main>
+  );
+}
+
+/**
+ * Top-to-bottom order of a building's cafes in the app and website. Each move saves straight away and the
+ * app updates live. Open cafes still show before closed ones; this order applies within each group.
+ */
+function CafeOrder({ locationId, cafes, onSaved }: { locationId: string; cafes: Cafe[]; onSaved: () => Promise<unknown> }) {
+  const [list, setList] = useState(() => [...cafes].sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name)));
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function move(i: number, to: number) {
+    if (to < 0 || to >= list.length || saving) return;
+    const next = [...list];
+    const [c] = next.splice(i, 1);
+    next.splice(to, 0, c);
+    const before = list;
+    setList(next); // move at once, save in the background
+    setSaving(true);
+    setErr('');
+    try {
+      await api.put(`/v1/admin/locations/${locationId}/cafe-order`, { cafeIds: next.map((x) => x.id) });
+      await onSaved();
+    } catch (e) {
+      setList(before);
+      setErr((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="card" style={{ padding: 20, marginBottom: 24, maxWidth: 640 }}>
+      <div className="row" style={{ alignItems: 'baseline' }}>
+        <div className="h3">Order in the app</div>
+        <span className="small">{saving ? 'Saving…' : 'Saved · the app updates right away'}</span>
+      </div>
+      <p className="small" style={{ margin: '6px 0 14px' }}>
+        Top to bottom, as customers see it. Cafes that are closed or paused still drop below the open ones until they open.
+      </p>
+      {err && <div className="err" style={{ marginBottom: 10 }}>{err}</div>}
+      <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {list.map((c, i) => (
+          <li key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 12, border: '1px solid var(--line)', background: 'var(--surface)' }}>
+            <b style={{ width: 22, textAlign: 'right', color: 'var(--sub)' }}>{i + 1}</b>
+            <FoodTile emoji={c.emoji} imageUrl={c.logoUrl ?? c.imageUrl} color={c.coverColor} size={36} />
+            <span style={{ flex: 1, minWidth: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+            {!(c.isOpen && c.acceptingOrders) && <span className="badge mute">{c.isOpen ? 'Paused' : 'Closed'}</span>}
+            <button className="iconbtn" style={{ width: 36, height: 36 }} disabled={i === 0 || saving} onClick={() => move(i, 0)} aria-label={`Move ${c.name} to the top`} title="Move to top">⤒</button>
+            <button className="iconbtn" style={{ width: 36, height: 36 }} disabled={i === 0 || saving} onClick={() => move(i, i - 1)} aria-label={`Move ${c.name} up`} title="Move up">↑</button>
+            <button className="iconbtn" style={{ width: 36, height: 36 }} disabled={i === list.length - 1 || saving} onClick={() => move(i, i + 1)} aria-label={`Move ${c.name} down`} title="Move down">↓</button>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }

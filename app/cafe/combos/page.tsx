@@ -1,5 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
+import { confirmDelete } from '@/lib/confirm';
 import { api } from '@/lib/api';
 import { rupees } from '@/lib/format';
 import { useLoad } from '@/lib/useLoad';
@@ -100,7 +101,7 @@ export default function CombosPage() {
   }
 
   async function remove() {
-    if (!draft?.id || !confirm(`Delete the combo “${draft.name}”?`)) return;
+    if (!draft?.id || !confirmDelete(`the combo “${draft.name}”`)) return;
     await api.del(`/v1/cafe/combos/${draft.id}`).catch((e: Error) => alert(e.message));
     setDraft(null);
     await combos.reload();

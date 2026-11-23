@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import { confirmDelete } from '@/lib/confirm';
 import { api } from '@/lib/api';
 import { addressLine, rupees, todayIST } from '@/lib/format';
 import { onCafeOrders } from '@/lib/live';
@@ -145,7 +146,7 @@ export default function LunchPage() {
                   </button>
                   {!l.booked && (
                     <button className="btn danger sm" aria-label="Delete lunch"
-                      onClick={() => confirm(`Delete ${l.name}?`) && run(() => api.del(`/v1/cafe/lunch/${l.id}`))}>
+                      onClick={() => confirmDelete(l.name) && run(() => api.del(`/v1/cafe/lunch/${l.id}`))}>
                       <Icon name="trash" size={15} />
                     </button>
                   )}

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { confirmDelete } from '@/lib/confirm';
 import { api } from '@/lib/api';
 import { useLoad } from '@/lib/useLoad';
 import type { Cafe, Category, MenuItem } from '@/lib/types';
@@ -37,9 +38,9 @@ export default function ProductsPage() {
 
   async function removeCategory(c: Category, isMain: boolean) {
     const subs = categories.data?.filter((x) => x.parentId === c.id).length ?? 0;
-    const msg = `Delete “${c.name}”? Its products stay on the menu without a category.`
+    const msg = `Its products stay on the menu without a category.`
       + (isMain && subs ? ` Its ${subs} sub-categor${subs === 1 ? 'y becomes a main category' : 'ies become main categories'}.` : '');
-    if (!confirm(msg)) return;
+    if (!confirmDelete(`“${c.name}”`, msg)) return;
     await api.del(`/v1/admin/categories/${c.id}`).catch((e: Error) => alert(e.message));
     await Promise.all([categories.reload(), items.reload()]);
   }

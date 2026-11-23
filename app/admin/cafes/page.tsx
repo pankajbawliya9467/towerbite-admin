@@ -24,9 +24,13 @@ export default function CafesPage() {
     router.push(path);
   };
 
-  async function remove(c: Cafe) {
-    if (!confirm(`Delete ${c.name} with its whole menu?`)) return;
-    await api.del(`/v1/admin/cafes/${c.id}`).catch((e: Error) => alert(e.message));
+  /** Cafes are never deleted (their orders and reports stay): inactive hides them from the app and website. */
+  async function setActive(c: Cafe, active: boolean) {
+    const ask = active
+      ? `Make ${c.name} active again? It shows in the app and website and can take orders.`
+      : `Make ${c.name} inactive?\n\nIt disappears from the app and website and takes no orders. Its menu, orders and reports are kept, and you can make it active again any time.`;
+    if (!confirm(ask)) return;
+    await api.patch(`/v1/admin/cafes/${c.id}`, { isActive: active }).catch((e: Error) => alert(e.message));
     await cafes.reload();
   }
 
@@ -55,7 +59,7 @@ export default function CafesPage() {
       {cafes.error && <div className="err">{cafes.error}</div>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
         {cafes.data?.map((c) => (
-          <div key={c.id} className="card" style={{ overflow: 'hidden' }}>
+          <div key={c.id} className="card" style={{ overflow: 'hidden', opacity: c.isActive ? 1 : 0.65 }}>
             <div style={{ height: 132, background: c.coverColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 56, position: 'relative' }}>
               {c.imageUrl ? <img src={c.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.emoji}
               {c.logoUrl && <img src={c.logoUrl} alt="" style={{ position: 'absolute', left: 14, bottom: -22, width: 52, height: 52, borderRadius: 14, objectFit: 'cover', background: '#fff', boxShadow: '0 0 0 3px #fff' }} />}
@@ -64,6 +68,7 @@ export default function CafesPage() {
               <div className="row" style={{ gap: 12 }}>
                 <div className="h2" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
                 <div style={{ display: 'flex', gap: 6 }}>
+                  {!c.isActive && <span className="badge warn">Inactive</span>}
                   <span className={`badge ${c.isOpen ? 'ok' : 'mute'}`}>{c.isOpen ? 'Open' : 'Closed'}</span>
                   {c.isOpen && !c.acceptingOrders && <span className="badge warn">Paused</span>}
                 </div>
@@ -74,8 +79,11 @@ export default function CafesPage() {
                 <button className="btn sm" style={{ flex: 1 }} onClick={() => go(c, '/cafe')}><Icon name="board" /> Live board</button>
                 <button className="btn sec sm" onClick={() => go(c, '/admin/products')}>Menu</button>
                 <button className="btn sec sm" onClick={() => setEditing(c)} aria-label="Edit cafe"><Icon name="edit" /></button>
-                <button className="iconbtn" style={{ height: 42, width: 42 }} onClick={() => remove(c)} aria-label="Delete cafe"><Icon name="trash" /></button>
               </div>
+              <button className="link" style={{ marginTop: 12, fontSize: 13, color: c.isActive ? 'var(--sub)' : 'var(--green)' }}
+                onClick={() => setActive(c, !c.isActive)}>
+                {c.isActive ? 'Make inactive (hide from app)' : 'Make active again'}
+              </button>
             </div>
           </div>
         ))}
@@ -133,7 +141,8 @@ function CafeOrder({ locationId, cafes, onSaved }: { locationId: string; cafes: 
             <b style={{ width: 22, textAlign: 'right', color: 'var(--sub)' }}>{i + 1}</b>
             <FoodTile emoji={c.emoji} imageUrl={c.logoUrl ?? c.imageUrl} color={c.coverColor} size={36} />
             <span style={{ flex: 1, minWidth: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
-            {!(c.isOpen && c.acceptingOrders) && <span className="badge mute">{c.isOpen ? 'Paused' : 'Closed'}</span>}
+            {!c.isActive ? <span className="badge warn">Inactive · hidden</span>
+              : !(c.isOpen && c.acceptingOrders) && <span className="badge mute">{c.isOpen ? 'Paused' : 'Closed'}</span>}
             <button className="iconbtn" style={{ width: 36, height: 36 }} disabled={i === 0 || saving} onClick={() => move(i, 0)} aria-label={`Move ${c.name} to the top`} title="Move to top">⤒</button>
             <button className="iconbtn" style={{ width: 36, height: 36 }} disabled={i === 0 || saving} onClick={() => move(i, i - 1)} aria-label={`Move ${c.name} up`} title="Move up">↑</button>
             <button className="iconbtn" style={{ width: 36, height: 36 }} disabled={i === list.length - 1 || saving} onClick={() => move(i, i + 1)} aria-label={`Move ${c.name} down`} title="Move down">↓</button>

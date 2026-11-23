@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { confirmDelete } from '@/lib/confirm';
 import { api } from '@/lib/api';
 import { shortDate } from '@/lib/format';
 import { useLoad } from '@/lib/useLoad';
@@ -18,7 +19,7 @@ export default function StaffPage() {
   const [adding, setAdding] = useState(false);
 
   async function remove(s: StaffRow) {
-    if (!confirm(`Remove ${s.name || s.email}? They will no longer be able to log in.`)) return;
+    if (!confirmDelete(`the login of ${s.name || s.email}`, 'They will no longer be able to log in.')) return;
     await api.del(`/v1/admin/staff/${s.userId}`).catch((e: Error) => alert(e.message));
     await staff.reload();
   }

@@ -1,5 +1,6 @@
 'use client';
 import { useState, type FormEvent } from 'react';
+import { confirmDelete } from '@/lib/confirm';
 import { api } from '@/lib/api';
 import { slugify } from '@/lib/format';
 import { useLoad } from '@/lib/useLoad';
@@ -19,7 +20,7 @@ export default function LocationsPage() {
   const [editing, setEditing] = useState<Draft | null>(null);
 
   async function remove(l: Location) {
-    if (!confirm(`Delete ${l.name}? Its towers and cafes will be removed too.`)) return;
+    if (!confirmDelete(l.name, 'Its towers and cafes will be removed too.')) return;
     await api.del(`/v1/admin/locations/${l.id}`).catch((e: Error) => alert(e.message));
     await Promise.all([locations.reload(), towers.reload()]);
   }
@@ -70,7 +71,7 @@ function Towers({ location, towers, reload }: { location: Location; towers: Towe
   }
 
   async function remove(t: Tower) {
-    if (!confirm(`Remove ${t.name}?`)) return;
+    if (!confirmDelete(t.name)) return;
     await api.del(`/v1/admin/towers/${t.id}`).catch((e: Error) => alert(e.message));
     await reload();
   }

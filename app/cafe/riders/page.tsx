@@ -1,5 +1,6 @@
 'use client';
 import { useState, type FormEvent } from 'react';
+import { confirmDelete } from '@/lib/confirm';
 import { api } from '@/lib/api';
 import { useLoad } from '@/lib/useLoad';
 import type { Rider } from '@/lib/types';
@@ -34,7 +35,7 @@ export default function RidersPage() {
   }
 
   async function remove(r: Rider) {
-    if (!confirm(`Remove ${r.name} from delivery staff?`)) return;
+    if (!confirmDelete(`${r.name} from delivery staff`)) return;
     await api.del(`/v1/cafe/riders/${r.id}`).catch((e: Error) => alert(e.message));
     await riders.reload();
   }

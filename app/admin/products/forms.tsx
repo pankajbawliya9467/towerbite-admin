@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { confirmDelete } from '@/lib/confirm';
 import { api } from '@/lib/api';
 import type { Cafe, Category, MenuItem } from '@/lib/types';
 import { FormModal } from '@/components/FormModal';
@@ -67,7 +68,7 @@ export function ItemForm({ draft, cafe, categories, onClose, onSaved }: {
   }
 
   async function remove() {
-    if (!d.id || !confirm(`Delete ${d.name}?`)) return;
+    if (!d.id || !confirmDelete(d.name)) return;
     await api.del(`/v1/admin/menu-items/${d.id}`).catch((e: Error) => alert(e.message));
     await onSaved();
     onClose();

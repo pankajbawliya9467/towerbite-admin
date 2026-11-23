@@ -20,7 +20,7 @@ export type Order = {
 export type Cafe = {
   id: string; locationId: string; slug: string; name: string; cuisines: string; place: string; emoji: string;
   coverColor: string; imageUrl: string | null; logoUrl: string | null; phone: string | null; rating: number; ratingCount: number;
-  etaMin: number; etaMax: number; isOpen: boolean; acceptingOrders: boolean; tags: string[]; sort: number;
+  etaMin: number; etaMax: number; isOpen: boolean; acceptingOrders: boolean; tags: string[]; sort: number; isActive: boolean;
 };
 export type Category = { id: string; cafeId: string; parentId: string | null; name: string; sort: number };
 export type MenuItem = {

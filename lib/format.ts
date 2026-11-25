@@ -6,7 +6,9 @@ export function timeAgo(iso: string, now: number) {
   const min = Math.floor((now - new Date(iso).getTime()) / 60000);
   if (min < 1) return 'just now';
   if (min < 60) return `${min} min`;
-  return `${Math.floor(min / 60)} h ${min % 60} min`;
+  if (min < 24 * 60) return `${Math.floor(min / 60)} h ${min % 60} min`;
+  const d = Math.floor(min / 1440);
+  return `${d} ${d === 1 ? 'day' : 'days'}`;
 }
 
 export const clock = (d: Date) =>

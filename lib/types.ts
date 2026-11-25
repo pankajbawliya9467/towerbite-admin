@@ -61,6 +61,8 @@ export type Lunch = {
   id: string; cafeId: string; day: string; name: string; items: string; price: number; isVeg: boolean; plates: number;
   imageUrl: string | null; closesAt: string; cancelUntil: string; slots: string[]; isActive: boolean; booked: number; left: number; bookable: boolean;
   bySlot: LunchSlot[];
+  /** Only in /v1/cafe/lunch/past: how many times this dish was posted. */
+  timesPosted?: number;
 };
 export type LunchBookingStatus = 'booked' | 'out' | 'delivered' | 'cancelled';
 export type LunchBooking = {

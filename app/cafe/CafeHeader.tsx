@@ -66,6 +66,19 @@ export function CafeHeader() {
         { href: '/cafe/reports', label: 'Reports', icon: 'chart' },
         ...(isAdmin ? [{ href: '/admin/cafes', label: 'Back to admin', icon: 'back' as const }] : []),
       ]}
+      quick={
+        <button
+          role="switch"
+          aria-checked={cafe.acceptingOrders}
+          className={`side-accept-sm${cafe.acceptingOrders ? ' on' : ''}`}
+          onClick={toggleAccepting}
+          disabled={busy}
+          aria-label="Accepting orders"
+        >
+          <span>{cafe.acceptingOrders ? 'Open' : 'Paused'}</span>
+          <span className={`switch sm${cafe.acceptingOrders ? ' on' : ''}`} aria-hidden />
+        </button>
+      }
       footer={
         <>
           <span className="side-clock">{now ? clock(now) : ''}</span>

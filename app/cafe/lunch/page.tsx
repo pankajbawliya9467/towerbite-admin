@@ -11,6 +11,7 @@ import { Field } from '@/components/Field';
 import { ImageField } from '@/components/ImageField';
 import { FormModal } from '@/components/FormModal';
 import { Icon } from '@/components/Icon';
+import { Modal } from '@/components/Modal';
 import { PageHead } from '@/components/PageHead';
 import styles from './lunch.module.css';
 
@@ -38,7 +39,17 @@ const STATUS = {
   cancelled: { label: 'Cancelled', cls: 'mute' },
 } as const;
 
-type FormState = { mode: 'new' | 'edit'; lunch: Partial<Lunch> };
+type FormState = { mode: 'new' | 'edit'; lunch: Partial<Lunch>; copiedFrom?: Lunch };
+
+/** A past lunch as the start of a new one: same dish, photo, price and times; bookings start fresh. */
+const copyOf = (l: Lunch, day: string): FormState => ({
+  mode: 'new',
+  copiedFrom: l,
+  lunch: {
+    day, name: l.name, items: l.items, price: l.price, isVeg: l.isVeg, plates: l.plates, imageUrl: l.imageUrl,
+    closesAt: l.closesAt, cancelUntil: l.cancelUntil, slots: l.slots,
+  },
+});
 
 export default function LunchPage() {
   const { cafe } = useCafe();
@@ -47,6 +58,9 @@ export default function LunchPage() {
   const [day, setDay] = useState(today);
   const [form, setForm] = useState<FormState | null>(null);
   const [toast, setToast] = useState('');
+  const [picking, setPicking] = useState(false);
+  const past = useLoad<Lunch[]>('/v1/cafe/lunch/past');
+  const recent = (past.data ?? []).slice(0, 3); // newest first
 
   const lunches = useLoad<Lunch[]>(`/v1/cafe/lunch?from=${today}&to=${days[days.length - 1]}`, 30000);
   const bookings = useLoad<LunchBooking[]>(`/v1/cafe/lunch/bookings?day=${day}`, 20000);
@@ -91,6 +105,9 @@ export default function LunchPage() {
           onClick={() => run(() => api.download(`/v1/cafe/lunch/bookings.csv?day=${day}`, `${cafe.slug}-lunch-${day}.csv`))}>
           <Icon name="download" size={16} /> Booking list
         </button>
+        <button className="btn sec sm" disabled={!past.data?.length} onClick={() => setPicking(true)}>
+          ↻ Post a past lunch
+        </button>
         <button className="btn sm" onClick={() => setForm({ mode: 'new', lunch: { day, slots: DEFAULT_SLOTS } })}>
           <Icon name="plus" size={16} /> Add lunch
         </button>
@@ -117,8 +134,19 @@ export default function LunchPage() {
           {lunches.data && !dayLunches.length && (
             <div className={`card ${styles.empty}`}>
               <b>No lunch on {dayName(day) === 'Today' || dayName(day) === 'Tomorrow' ? dayName(day).toLowerCase() : nice(day, { weekday: 'long', day: 'numeric', month: 'short' })} yet</b>
-              <span>Add one and it shows on the app's home screen straight away.</span>
-              <button className="btn sm" onClick={() => setForm({ mode: 'new', lunch: { day, slots: DEFAULT_SLOTS } })}>Add lunch</button>
+              <span>{recent.length ? 'Post one you made before, or add a new one.' : "Add one and it shows on the app's home screen straight away."}</span>
+              {recent.length > 0 && (
+                <div className={styles.recent}>
+                  <div className={styles.recentHead}>
+                    <span>YOUR RECENT LUNCHES</span>
+                    <button type="button" className="link" onClick={() => setPicking(true)}>See all past lunches →</button>
+                  </div>
+                  {recent.map((l) => <PastRow key={l.id} l={l} action="Post again" onPick={() => setForm(copyOf(l, day))} />)}
+                </div>
+              )}
+              <button className="btn sm" onClick={() => setForm({ mode: 'new', lunch: { day, slots: DEFAULT_SLOTS } })}>
+                <Icon name="plus" size={16} /> {recent.length ? 'Add a new lunch' : 'Add lunch'}
+              </button>
             </div>
           )}
           {dayLunches.map((l) => {
@@ -221,22 +249,32 @@ export default function LunchPage() {
         <LunchForm
           state={form}
           today={today}
+          days={days}
+          dayName={dayName}
+          posted={lunches.data ?? []}
           onClose={() => setForm(null)}
           onSaved={async (d) => {
             setDay(d);
-            await Promise.all([reloadLunches(), reloadBookings()]);
+            await Promise.all([reloadLunches(), reloadBookings(), past.reload()]);
           }}
         />
+      )}
+      {picking && past.data && (
+        <PastPicker list={past.data} onClose={() => setPicking(false)} onPick={(l) => (setPicking(false), setForm(copyOf(l, day)))} />
       )}
       {toast && <div className={styles.toast}>{toast}</div>}
     </main>
   );
 }
 
-function LunchForm({ state, today, onClose, onSaved }: {
-  state: FormState; today: string; onClose: () => void; onSaved: (day: string) => Promise<void>;
+function LunchForm({ state, today, days, dayName, posted, onClose, onSaved }: {
+  state: FormState; today: string; days: string[]; dayName: (d: string) => string; posted: Lunch[];
+  onClose: () => void; onSaved: (day: string) => Promise<void>;
 }) {
   const l = state.lunch;
+  const copy = state.copiedFrom;
+  // Copying a past lunch: tick one or more days (days that already have this dish can't be ticked).
+  const [postOn, setPostOn] = useState<string[]>(() => (l.day && l.day >= today ? [l.day] : [today]));
   const [v, setV] = useState({
     day: l.day && l.day >= today ? l.day : today,
     name: l.name ?? '',
@@ -267,10 +305,17 @@ function LunchForm({ state, today, onClose, onSaved }: {
     set({ slots: [...v.slots, s].sort() });
   }
 
+  const hasDish = (d: string, name: string) => posted.some((x) => x.day === d && x.name.trim().toLowerCase() === name.trim().toLowerCase());
+  const chosen = copy ? postOn.filter((d) => !hasDish(d, v.name)).sort() : [];
+
   async function submit() {
+    if (copy) {
+      if (!chosen.length) throw new Error('Pick at least one day that does not have this lunch yet');
+      v.day = chosen[0];
+    }
     const body = {
       day: v.day, name: v.name, items: v.items, price: Number(v.price), plates: Number(v.plates), isVeg: v.isVeg, imageUrl: v.imageUrl,
-      closesAt: v.closesAt, cancelUntil: v.cancelUntil, slots: v.slots, alsoOn,
+      closesAt: v.closesAt, cancelUntil: v.cancelUntil, slots: v.slots, alsoOn: copy ? chosen.slice(1) : alsoOn,
     };
     if (!v.name.trim()) throw new Error('Give the lunch a name');
     if (!(body.price >= 0) || v.price === '') throw new Error('Enter the price');
@@ -282,14 +327,26 @@ function LunchForm({ state, today, onClose, onSaved }: {
   }
 
   return (
-    <FormModal wide title={state.mode === 'edit' ? 'Edit lunch' : 'Add lunch'} submitLabel={state.mode === 'edit' ? 'Save' : alsoOn.length ? `Post on ${alsoOn.length + 1} days` : 'Post lunch'}
+    <FormModal wide title={state.mode === 'edit' ? 'Edit lunch' : copy ? 'Post lunch' : 'Add lunch'}
+      submitLabel={state.mode === 'edit' ? 'Save' : copy ? (chosen.length > 1 ? `Post on ${chosen.length} days` : 'Post lunch') : alsoOn.length ? `Post on ${alsoOn.length + 1} days` : 'Post lunch'}
       onClose={onClose} onSubmit={submit}>
+      {copy && (
+        <div className={styles.copied}>
+          {copy.imageUrl ? <img src={copy.imageUrl} alt="" /> : <span>🍱</span>}
+          <div>
+            <b>Copied from {copy.name} · {nice(copy.day, { weekday: 'short', day: 'numeric', month: 'short' })}</b>
+            <small>Photo, items, price and delivery times are filled in. Bookings start fresh.</small>
+          </div>
+        </div>
+      )}
       <Field label="Dish name">
         <input className="field" value={v.name} maxLength={60} placeholder="Veg Thali" onChange={(e) => set({ name: e.target.value })} required />
       </Field>
-      <Field label="Day">
-        <input className="field" type="date" min={today} value={v.day} onChange={(e) => set({ day: e.target.value })} required />
-      </Field>
+      {copy ? <div /> : (
+        <Field label="Day">
+          <input className="field" type="date" min={today} value={v.day} onChange={(e) => set({ day: e.target.value })} required />
+        </Field>
+      )}
       <Field label="Photo · square works best" full>
         <ImageField value={v.imageUrl} onChange={(url) => set({ imageUrl: url })} folder="cafe" emoji="🍱" color="#FDEBDD" />
       </Field>
@@ -314,7 +371,24 @@ function LunchForm({ state, today, onClose, onSaved }: {
           <button type="button" className={!v.isVeg ? styles.segOn : undefined} onClick={() => set({ isVeg: false })}><span className="veg non" /> Non-veg</button>
         </div>
       </Field>
-      {state.mode === 'new' ? (
+      {copy ? (
+        <Field label="Post on" full>
+          <div className={styles.postOn}>
+            {days.map((d) => {
+              const has = hasDish(d, v.name);
+              const on = !has && postOn.includes(d);
+              return (
+                <button type="button" key={d} disabled={has} className={on ? styles.postOnOn : undefined} aria-pressed={on}
+                  title={has ? 'This lunch is already posted on this day' : undefined}
+                  onClick={() => setPostOn((x) => (x.includes(d) ? x.filter((y) => y !== d) : [...x, d]))}>
+                  {on ? '✓ ' : ''}{dayName(d)} {nice(d, { day: 'numeric', month: 'short' })}{has ? ' · posted' : ''}
+                </button>
+              );
+            })}
+          </div>
+          <div className="small" style={{ marginTop: 6 }}>Days that already have this lunch are skipped.</div>
+        </Field>
+      ) : state.mode === 'new' ? (
         <Field label="Repeat">
           <select className="field" value={v.repeat} onChange={(e) => set({ repeat: e.target.value as typeof v.repeat })}>
             <option value="none">Only this day</option>
@@ -340,5 +414,55 @@ function LunchForm({ state, today, onClose, onSaved }: {
         </div>
       </Field>
     </FormModal>
+  );
+}
+
+/** One past lunch: photo, name, price, when it was last posted and how it sold. */
+function PastRow({ l, action, primary, detail, onPick }: { l: Lunch; action: string; primary?: boolean; detail?: boolean; onPick: () => void }) {
+  const sold = l.left === 0;
+  return (
+    <div className={styles.pastRow}>
+      {l.imageUrl ? <img src={l.imageUrl} alt="" className={styles.pastPic} /> : <span className={styles.pastPic}>🍱</span>}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div className={styles.pastName}>
+          <span className={`veg${l.isVeg ? '' : ' non'}`} aria-label={l.isVeg ? 'Veg' : 'Non-veg'} />
+          <b>{l.name}</b> <span>· {rupees(l.price)}</span>
+        </div>
+        {detail && l.items && <div className={styles.pastItems}>{l.items}</div>}
+        <div className={styles.pastMeta}>
+          Last: {nice(l.day, { weekday: 'short', day: 'numeric', month: 'short' })} · {sold ? `${l.plates} of ${l.plates} · sold out` : `${l.booked} of ${l.plates} booked`}
+          {detail && l.timesPosted ? ` · posted ${l.timesPosted}×` : ''}
+        </div>
+      </div>
+      <button type="button" className={`btn ${primary ? '' : 'sec '}sm`} onClick={onPick}>{action}</button>
+    </div>
+  );
+}
+
+/** "Post a past lunch": every dish this cafe posted before, searchable. "Use this" opens the form filled in. */
+function PastPicker({ list, onClose, onPick }: { list: Lunch[]; onClose: () => void; onPick: (l: Lunch) => void }) {
+  const [q, setQ] = useState('');
+  const [sort, setSort] = useState<'most' | 'latest' | 'veg' | 'nonveg'>('most');
+  const shown = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    let out = list.filter((l) => !s || `${l.name} ${l.items}`.toLowerCase().includes(s));
+    if (sort === 'veg') out = out.filter((l) => l.isVeg);
+    if (sort === 'nonveg') out = out.filter((l) => !l.isVeg);
+    return sort === 'most' ? [...out].sort((a, b) => (b.timesPosted ?? 1) - (a.timesPosted ?? 1) || b.day.localeCompare(a.day)) : out;
+  }, [list, q, sort]);
+  return (
+    <Modal title="Post a past lunch" wide onClose={onClose}>
+      <p className="small" style={{ margin: '-12px 0 14px' }}>Pick one: it opens with everything filled in (photo, items, price, times). Change anything, then post.</p>
+      <input className="field" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search your lunches" autoFocus />
+      <div className="wrap" style={{ margin: '10px 0 4px', gap: 6 }}>
+        {([['most', 'Most posted'], ['latest', 'Latest'], ['veg', 'Veg'], ['nonveg', 'Non-veg']] as const).map(([k, label]) => (
+          <button key={k} type="button" className={`pill${sort === k ? ' on' : ''}`} style={{ marginRight: 0 }} onClick={() => setSort(k)}>{label}</button>
+        ))}
+      </div>
+      <div className={styles.pastList}>
+        {shown.map((l, i) => <PastRow key={l.id} l={l} detail action="Use this" primary={i === 0} onPick={() => onPick(l)} />)}
+        {!shown.length && <div className="small" style={{ padding: '16px 0' }}>No lunch matches “{q}”.</div>}
+      </div>
+    </Modal>
   );
 }

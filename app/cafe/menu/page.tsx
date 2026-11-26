@@ -11,11 +11,17 @@ export default function CafeMenuPage() {
     api.get<CafeWithMenu>('/v1/cafe/menu').then(setMenu);
   }, []);
 
-  async function setAvailable(item: MenuItem, isAvailable: boolean) {
-    const update = (v: boolean) =>
-      setMenu((m) => m && { ...m, items: m.items.map((i) => (i.id === item.id ? { ...i, isAvailable: v } : i)) });
-    update(isAvailable);
-    await api.patch(`/v1/cafe/menu-items/${item.id}`, { isAvailable }).catch(() => update(!isAvailable));
+  /** Changes one switch at once on screen, then saves; puts it back if saving fails. */
+  async function change(item: MenuItem, patch: Partial<Pick<MenuItem, 'isAvailable' | 'isPopular' | 'isActive'>>) {
+    const apply = (p: typeof patch) =>
+      setMenu((m) => m && { ...m, items: m.items.map((i) => (i.id === item.id ? { ...i, ...p } : i)) });
+    const before = Object.fromEntries(Object.keys(patch).map((k) => [k, item[k as keyof MenuItem]]));
+    apply(patch);
+    await api.patch(`/v1/cafe/menu-items/${item.id}`, patch).catch((e: Error) => (apply(before), alert(e.message)));
+  }
+  function setHidden(item: MenuItem, hide: boolean) {
+    if (hide && !confirm(`Hide ${item.name} from customers?\n\nIt disappears from the app and website until you show it again. Nothing is deleted.`)) return;
+    void change(item, { isActive: !hide });
   }
 
   return (
@@ -23,10 +29,10 @@ export default function CafeMenuPage() {
       <div className="pagehead">
         <div>
           <div className="h1">Menu</div>
-          <p className="sub">Switch an item off when it runs out. Customers can order it again when you switch it back on. Search or pick a category to find an item fast.</p>
+          <p className="sub">Switch an item off when it runs out today. ★ puts it in Popular. Hide takes it off the menu (seasonal or paused dishes) until you show it again.</p>
         </div>
       </div>
-      {menu && <MenuManager categories={menu.categories} items={menu.items} coverColor={menu.coverColor} onAvailable={setAvailable} />}
+      {menu && <MenuManager categories={menu.categories} items={menu.items} coverColor={menu.coverColor} onAvailable={(i, v) => change(i, { isAvailable: v })} onPopular={(i, v) => change(i, { isPopular: v })} onHidden={setHidden} />}
     </main>
   );
 }

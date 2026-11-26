@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import { clock, rupees } from '@/lib/format';
 import type { CafeWithMenu } from '@/lib/types';
 import { useCafe } from '@/components/CafeContext';
+import { useCan } from '@/components/useCan';
 import { useSession } from '@/components/Session';
 import { Icon } from '@/components/Icon';
 import { Sidebar } from '@/components/Sidebar';
@@ -14,6 +15,8 @@ type Today = { orders: number; delivered: number; sales: number; codCollected: n
 /** The cafe's sidebar: sections, "Accepting orders" switch, today's numbers, clock. */
 export function CafeHeader() {
   const { cafe, setCafe, isAdmin } = useCafe();
+  const ok = useCan();
+  const canToggle = !isAdmin || ok('cafes.openclose');
   const { logout } = useSession();
   const [now, setNow] = useState<Date | null>(null);
   const [busy, setBusy] = useState(false);
@@ -64,6 +67,7 @@ export function CafeHeader() {
         { href: '/cafe/history', label: 'Order history', icon: 'history' },
         { href: '/cafe/ratings', label: 'Ratings', icon: 'star' },
         { href: '/cafe/reports', label: 'Reports', icon: 'chart' },
+        ...(isAdmin ? [] : [{ href: '/cafe/account', label: 'My account', icon: 'key' as const }]),
         ...(isAdmin ? [{ href: '/admin/cafes', label: 'Back to admin', icon: 'back' as const }] : []),
       ]}
       quick={
@@ -71,8 +75,8 @@ export function CafeHeader() {
           role="switch"
           aria-checked={cafe.acceptingOrders}
           className={`side-accept-sm${cafe.acceptingOrders ? ' on' : ''}`}
-          onClick={toggleAccepting}
-          disabled={busy}
+          onClick={toggleAccepting} title={canToggle ? undefined : "You don't have the Open / pause tick"}
+          disabled={busy || !canToggle}
           aria-label="Accepting orders"
         >
           <span>{cafe.acceptingOrders ? 'Open' : 'Paused'}</span>
@@ -91,8 +95,8 @@ export function CafeHeader() {
         role="switch"
         aria-checked={cafe.acceptingOrders}
         className={`side-accept${cafe.acceptingOrders ? ' on' : ''}`}
-        onClick={toggleAccepting}
-        disabled={busy}
+        onClick={toggleAccepting} title={canToggle ? undefined : "You don't have the Open / pause tick"}
+        disabled={busy || !canToggle}
       >
         <span>{cafe.acceptingOrders ? 'Accepting orders' : 'Not accepting'}</span>
         <span className={`switch${cafe.acceptingOrders ? ' on' : ''}`} aria-hidden />

@@ -1,5 +1,7 @@
 /** Line icons in the mockup's style (24px grid, 2px stroke). */
 const PATHS = {
+  key: <><circle cx="8" cy="15" r="4" /><path d="M11 12l9-9M16 7l3 3M18 5l2 2" /></>,
+  shield: <path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z" />,
   check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
   down: <path d="M6 9l6 6 6-6" />,
   back: <path d="M15 18l-6-6 6-6" />,

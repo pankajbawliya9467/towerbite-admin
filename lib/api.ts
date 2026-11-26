@@ -1,5 +1,5 @@
 import { API_URL } from './config';
-import { getToken } from './auth';
+import { getToken, signOut } from './auth';
 
 let cafeScope: string | null = null;
 
@@ -26,6 +26,11 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
   });
   const data = res.status === 204 ? null : await res.json().catch(() => null);
+  // Login ended (expired, password changed, turned off): back to the login page.
+  if (res.status === 401 && token && typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+    await signOut().catch(() => undefined);
+    window.location.href = '/login';
+  }
   if (!res.ok) throw new ApiError(data?.error ?? data?.message ?? 'Something went wrong', res.status);
   return data as T;
 }

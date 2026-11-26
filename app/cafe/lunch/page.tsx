@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { addressLine, rupees, todayIST } from '@/lib/format';
 import { onCafeOrders } from '@/lib/live';
 import { useLoad } from '@/lib/useLoad';
+import { Empty, Pager, SearchBox, useClientPage } from '@/components/ListTools';
 import type { Lunch, LunchBooking } from '@/lib/types';
 import { useCafe } from '@/components/CafeContext';
 import { Field } from '@/components/Field';
@@ -66,6 +67,17 @@ export default function LunchPage() {
   const bookings = useLoad<LunchBooking[]>(`/v1/cafe/lunch/bookings?day=${day}`, 20000);
   const { reload: reloadLunches } = lunches;
   const { reload: reloadBookings } = bookings;
+  // Bookings list: search, slot and status, 25 at a time.
+  const [bq, setBq] = useState({ search: '', slot: '', status: '', page: 1, size: 25 });
+  const setB = (patch: Partial<typeof bq>) => setBq((c) => ({ ...c, ...patch, page: 'page' in patch ? patch.page! : 1 }));
+  const bookingSlots = useMemo(() => [...new Set((bookings.data ?? []).map((b) => b.slot))].sort(), [bookings.data]);
+  const shownBookings = useMemo(() => {
+    const t = bq.search.toLowerCase();
+    return (bookings.data ?? []).filter((b) =>
+      (!t || String(b.bookingNo).includes(t) || (b.customerName ?? '').toLowerCase().includes(t) || (b.address.company ?? '').toLowerCase().includes(t))
+      && (!bq.slot || b.slot === bq.slot) && (!bq.status || b.status === bq.status));
+  }, [bookings.data, bq.search, bq.slot, bq.status]);
+  const bpg = useClientPage(shownBookings, bq.page, bq.size);
   // A new booking or cancellation shows up straight away.
   useEffect(() => onCafeOrders(cafe.id, () => (void reloadLunches(), void reloadBookings()), 'lunch'), [cafe.id, reloadLunches, reloadBookings]);
 
@@ -188,12 +200,24 @@ export default function LunchPage() {
           {live.length > 0 && (
             <div className="card" style={{ overflow: 'hidden' }}>
               <div className={styles.cardHead}>Bookings · {live.length}</div>
+              <div className="lt-bar" style={{ padding: '0 18px' }}>
+                <SearchBox value={bq.search} onChange={(search) => setB({ search })} placeholder="Booking no, name or company" width={240} />
+                <select className="field lt-sel" value={bq.slot} aria-label="Slot" onChange={(e) => setB({ slot: e.target.value })}>
+                  <option value="">All slots</option>
+                  {bookingSlots.map((x) => <option key={x} value={x}>{slotLabel(x)}</option>)}
+                </select>
+                <select className="field lt-sel" value={bq.status} aria-label="Status" onChange={(e) => setB({ status: e.target.value })}>
+                  <option value="">Every status</option>
+                  {(Object.keys(STATUS) as (keyof typeof STATUS)[]).map((k) => <option key={k} value={k}>{STATUS[k].label}</option>)}
+                </select>
+              </div>
+              <div className="table-scroll">
               <table className="table">
                 <thead>
                   <tr><th>Time</th><th>Who · where</th><th>Lunch</th><th className="num">Amount</th><th>Status</th><th /></tr>
                 </thead>
                 <tbody>
-                  {(bookings.data ?? []).map((b) => (
+                  {bpg.rows.map((b) => (
                     <tr key={b.id} style={{ opacity: b.status === 'cancelled' ? 0.5 : 1 }}>
                       <td style={{ whiteSpace: 'nowrap' }}><b>{slotLabel(b.slot)}</b><div className="small">#{b.bookingNo}</div></td>
                       <td><b>{b.customerName || 'Employee'}</b><div className="small">{addressLine(b.address)}{b.address.company ? ` · ${b.address.company}` : ''}</div>
@@ -210,6 +234,9 @@ export default function LunchPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
+              {!bpg.total && <Empty>No bookings match.</Empty>}
+              <Pager page={bpg.page} pageSize={bq.size} total={bpg.total} onPage={(p) => setB({ page: p })} onSize={(x) => setB({ size: x })} />
             </div>
           )}
         </section>

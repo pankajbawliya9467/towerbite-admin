@@ -9,7 +9,8 @@ import { api } from './api';
 /** Last data per path, so going back to a page shows it at once while it refreshes. */
 const memory = new Map<string, unknown>();
 
-export function useLoad<T>(path: string | null, pollMs?: number) {
+/** `keep`: while a new path loads, keep showing the last data (paged lists, so the table doesn't flash empty). */
+export function useLoad<T>(path: string | null, pollMs?: number, keep = false) {
   const [data, setData] = useState<T | null>(() => (path ? ((memory.get(path) as T) ?? null) : null));
   const [error, setError] = useState('');
 
@@ -26,9 +27,9 @@ export function useLoad<T>(path: string | null, pollMs?: number) {
   }, [path]);
 
   useEffect(() => {
-    setData(path ? ((memory.get(path) as T) ?? null) : null);
+    setData((cur) => (path ? ((memory.get(path) as T) ?? (keep ? cur : null)) : null));
     void reload();
-  }, [reload]);
+  }, [reload]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!pollMs) return;

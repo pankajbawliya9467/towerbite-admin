@@ -14,11 +14,16 @@ const PAGE_SIZES = [25, 50, 100];
  * A cafe's menu for 100+ products: categories (with sub-categories) on the left, then search,
  * stock / veg filters and pages of products. The admin passes the edit buttons.
  */
-export function MenuManager({ categories, items, coverColor, onAvailable, categoryActions, itemActions, onCategoryChange }: {
+export function MenuManager({ categories, items, coverColor, onAvailable, onPopular, onHidden, categoryActions, itemActions, onCategoryChange }: {
   categories: Category[];
   items: MenuItem[];
   coverColor: string;
-  onAvailable: (item: MenuItem, on: boolean) => void;
+  /** Without it the in-stock switch is shown read-only. */
+  onAvailable?: (item: MenuItem, on: boolean) => void;
+  /** ★ button (popular on the customer menu); without it the star only shows. */
+  onPopular?: (item: MenuItem, on: boolean) => void;
+  /** Hide / Show again (hidden = customers can't see it); without it there is no button. */
+  onHidden?: (item: MenuItem, hidden: boolean) => void;
   categoryActions?: (c: Category, isMain: boolean) => ReactNode;
   itemActions?: (i: MenuItem) => ReactNode;
   /** tells the page which category is picked, e.g. so "New product" starts in it */
@@ -28,7 +33,7 @@ export function MenuManager({ categories, items, coverColor, onAvailable, catego
   const order = useMemo(() => categoryOrder(tree), [tree]);
   const [cat, setCat] = useState<string>(''); // '' = all, NONE = no category, else a category id
   const [query, setQuery] = useState('');
-  const [stock, setStock] = useState<'' | 'in' | 'out'>('');
+  const [stock, setStock] = useState<'' | 'out' | 'hidden' | 'popular'>('');
   const [veg, setVeg] = useState<'' | 'veg' | 'non'>('');
   const [size, setSize] = useState(25);
   const [page, setPage] = useState(1);
@@ -42,13 +47,18 @@ export function MenuManager({ categories, items, coverColor, onAvailable, catego
 
   const loose = useMemo(() => items.filter((i) => !i.categoryId || !order.has(i.categoryId)), [items, order]);
   const countIn = (id: string) => itemsIn(items, tree, id).length;
-  const outCount = items.filter((i) => !i.isAvailable).length;
+  const hidden = (i: MenuItem) => i.isActive === false;
+  const outCount = items.filter((i) => !i.isAvailable && !hidden(i)).length;
+  const hiddenCount = items.filter(hidden).length;
+  const popularCount = items.filter((i) => i.isPopular && !hidden(i)).length;
 
   const list = useMemo(() => {
     let l = !cat ? items : cat === NONE ? loose : itemsIn(items, tree, cat);
     const q = query.trim().toLowerCase();
     if (q) l = l.filter((i) => `${i.name} ${i.description}`.toLowerCase().includes(q));
-    if (stock) l = l.filter((i) => i.isAvailable === (stock === 'in'));
+    if (stock === 'out') l = l.filter((i) => !i.isAvailable && !hidden(i));
+    if (stock === 'hidden') l = l.filter(hidden);
+    if (stock === 'popular') l = l.filter((i) => i.isPopular && !hidden(i));
     if (veg) l = l.filter((i) => i.isVeg === (veg === 'veg'));
     const rank = (i: MenuItem) => (i.categoryId && order.has(i.categoryId) ? order.get(i.categoryId)! : 1e6);
     return [...l].sort((a, b) => rank(a) - rank(b) || a.sort - b.sort || a.name.localeCompare(b.name));
@@ -90,16 +100,17 @@ export function MenuManager({ categories, items, coverColor, onAvailable, catego
             <Icon name="search" />
             <input className="field" type="search" placeholder="Search products" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search products" />
           </label>
-          <select className="field" value={stock} onChange={(e) => setStock(e.target.value as typeof stock)} aria-label="Stock">
-            <option value="">All stock</option>
-            <option value="in">In stock</option>
-            <option value="out">Out of stock{outCount ? ` (${outCount})` : ''}</option>
-          </select>
           <select className="field" value={veg} onChange={(e) => setVeg(e.target.value as typeof veg)} aria-label="Veg or non-veg">
             <option value="">Veg + non-veg</option>
             <option value="veg">Veg only</option>
             <option value="non">Non-veg only</option>
           </select>
+        </div>
+
+        <div className="wrap mm-quick" role="group" aria-label="Show">
+          {([['', `All ${items.length}`], ['out', `Out of stock ${outCount}`], ['hidden', `Hidden ${hiddenCount}`], ['popular', `★ Popular ${popularCount}`]] as const).map(([k, label]) => (
+            <button key={k || 'all'} type="button" className={`pill${stock === k ? ' on' : ''}`} aria-pressed={stock === k} onClick={() => setStock(k)}>{label}</button>
+          ))}
         </div>
 
         <div className="mm-summary small">
@@ -115,23 +126,38 @@ export function MenuManager({ categories, items, coverColor, onAvailable, catego
         <div className="card">
           {shown.length === 0 && <div className="empty">{items.length ? 'No products match.' : 'No products yet.'}</div>}
           {shown.map((item, idx) => (
-            <div key={item.id} className="menurow" style={{ borderTop: idx ? '1px solid var(--line)' : 0 }}>
+            <div key={item.id} className={`menurow${hidden(item) ? ' mm-hidden' : ''}`} style={{ borderTop: idx ? '1px solid var(--line)' : 0 }}>
               <FoodTile emoji={item.emoji} imageUrl={item.imageUrl} color={coverColor} />
-              <div style={{ flex: 1, minWidth: 0, opacity: item.isAvailable ? 1 : 0.55 }}>
+              <div style={{ flex: 1, minWidth: 0, opacity: item.isAvailable && !hidden(item) ? 1 : 0.55 }}>
                 <div className="menuname">
                   <span className={`veg${item.isVeg ? '' : ' non'}`} style={{ marginRight: 0 }} />
                   <span className="h3">{item.name}</span>
-                  {item.isPopular && <span className="badge acc">Popular</span>}
+                  {hidden(item) && <span className="badge mute">Hidden</span>}
+                  {item.isPopular && !onPopular && <span className="badge acc">Popular</span>}
                 </div>
-                <div className="small mm-path">{categoryPath(categories, item.categoryId)}{item.description ? ` · ${item.description}` : ''}</div>
+                <div className="small mm-path">
+                  {hidden(item) ? "Customers can't see it · " : ''}{categoryPath(categories, item.categoryId)}{item.description ? ` · ${item.description}` : ''}
+                </div>
               </div>
-              <div className="menuprice">{rupees(item.price)}</div>
+              <div className="menuprice" style={hidden(item) ? { opacity: 0.55 } : undefined}>{rupees(item.price)}</div>
+              {onPopular && (
+                <button type="button" className={`mm-star${item.isPopular ? ' on' : ''}`} aria-pressed={item.isPopular}
+                  onClick={() => onPopular(item, !item.isPopular)}
+                  title={item.isPopular ? 'Popular: shown at the top for customers. Tap to remove.' : 'Mark as popular'}
+                  aria-label={`${item.name}: popular`}>★</button>
+              )}
               <div className="menustock">
                 <span className="small" style={{ color: item.isAvailable ? 'var(--green)' : 'var(--sub)', fontWeight: 600 }}>
                   {item.isAvailable ? 'In stock' : 'Out of stock'}
                 </span>
-                <Switch on={item.isAvailable} onChange={(on) => onAvailable(item, on)} label={`${item.name} in stock`} />
+                {onAvailable && <Switch on={item.isAvailable} onChange={(on) => onAvailable(item, on)} label={`${item.name} in stock`} />}
               </div>
+              {onHidden && (
+                <button type="button" className={`mm-hide${hidden(item) ? ' show' : ''}`} onClick={() => onHidden(item, !hidden(item))}
+                  title={hidden(item) ? 'Show it to customers again' : 'Hide from customers (not deleted: orders and reports stay)'}>
+                  {hidden(item) ? 'Show again' : 'Hide'}
+                </button>
+              )}
               {itemActions?.(item)}
             </div>
           ))}

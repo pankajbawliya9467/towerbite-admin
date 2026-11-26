@@ -1,22 +1,38 @@
 'use client';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Chips, Empty, Pager, SearchBox, useClientPage } from '@/components/ListTools';
+import { useFilters } from '@/lib/useFilters';
+
+import { useRouter } from 'next/navigation';
 import { confirmDelete } from '@/lib/confirm';
 import { api } from '@/lib/api';
 import { shortDate } from '@/lib/format';
+import { PasswordModal, type PasswordTarget } from '@/components/PasswordModal';
 import { useLoad } from '@/lib/useLoad';
-import type { Cafe, Role, StaffRow } from '@/lib/types';
-import { useSession } from '@/components/Session';
+import type { Cafe, StaffRow } from '@/lib/types';
 import { PageHead } from '@/components/PageHead';
 import { FormModal } from '@/components/FormModal';
 import { Field } from '@/components/Field';
 import { Icon } from '@/components/Icon';
 
+/** Every cafe's CRM logins in one list. Admins are on the Admins page. */
 export default function StaffPage() {
   const staff = useLoad<StaffRow[]>('/v1/admin/staff');
-  const cafes = useLoad<Cafe[]>('/v1/admin/cafes');
-  const { state } = useSession();
-  const myId = state.status === 'ready' ? state.me.id : '';
-  const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<StaffRow | null>(null);
+  const [pw, setPw] = useState<PasswordTarget | null>(null);
+  const router = useRouter();
+  const { f, set, clear } = useFilters({ search: '', cafe: '', page: '1', pageSize: '25' });
+  const cafes = useMemo(() => [...new Set((staff.data ?? []).map((s) => s.cafeName ?? '').filter(Boolean))].sort(), [staff.data]);
+  const filtered = useMemo(() => {
+    const t = f.search.toLowerCase();
+    return (staff.data ?? []).filter((s) =>
+      (!t || [s.name, s.email, s.cafeName ?? ''].some((x) => (x ?? '').toLowerCase().includes(t))) && (!f.cafe || s.cafeName === f.cafe));
+  }, [staff.data, f.search, f.cafe]);
+  const pg = useClientPage(filtered, Number(f.page), Number(f.pageSize));
+  const chips = [
+    f.search && { label: `"${f.search}"`, clear: () => set({ search: '' }) },
+    f.cafe && { label: f.cafe, clear: () => set({ cafe: '' }) },
+  ].filter(Boolean) as { label: string; clear: () => void }[];
 
   async function remove(s: StaffRow) {
     if (!confirmDelete(`the login of ${s.name || s.email}`, 'They will no longer be able to log in.')) return;
@@ -24,78 +40,61 @@ export default function StaffPage() {
     await staff.reload();
   }
 
-  async function newPassword(s: StaffRow) {
-    const pw = prompt(`New password for ${s.name || s.email} (at least 8 characters). They will be logged out everywhere.`);
-    if (pw == null) return;
-    if (pw.length < 8) return alert('The password needs at least 8 characters.');
-    await api
-      .post(`/v1/admin/staff/${s.userId}/password`, { password: pw })
-      .then(() => alert(`Done. Share the new password with ${s.name || s.email} privately.`))
-      .catch((e: Error) => alert(e.message));
-  }
-
   return (
     <main className="page">
-      <PageHead title="Staff logins" sub="Cafe staff see their own cafe's live board and menu. Admins see everything.">
-        <button className="btn sm" onClick={() => setAdding(true)}><Icon name="plus" /> Add login</button>
+      <PageHead title="Cafe logins" sub="Each cafe logs in to see its own live board, menu and reports. Admins are on the Admins page.">
+        <button className="btn sm" onClick={() => router.push('/admin/staff/new')}><Icon name="plus" /> Add login</button>
       </PageHead>
+      <div className="lt-bar">
+        <SearchBox value={f.search} onChange={(search) => set({ search })} placeholder="Cafe, name or email" />
+        <select className="field lt-sel" value={f.cafe} aria-label="Cafe" onChange={(e) => set({ cafe: e.target.value })}>
+          <option value="">All cafes</option>
+          {cafes.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+      <Chips items={chips} onClear={() => clear(['pageSize'])} />
       {staff.error && <div className="err">{staff.error}</div>}
-      <div className="card">
-        <table className="table">
-          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Cafe</th><th>Added</th><th /></tr></thead>
+      <div className="card" style={{ overflowX: 'auto' }}>
+        <table className="table" style={{ minWidth: 680 }}>
+          <thead><tr><th>Cafe</th><th>Name</th><th>Email</th><th>Password</th><th /></tr></thead>
           <tbody>
-            {staff.data?.map((s) => (
+            {pg.rows.map((s) => (
               <tr key={s.userId}>
-                <td style={{ fontWeight: 600 }}>{s.name || '—'}</td>
+                <td style={{ fontWeight: 700 }}>{s.cafeName ?? '—'}</td>
+                <td>{s.name || '—'}<div className="small">{s.activeLogins} device{s.activeLogins === 1 ? '' : 's'}</div></td>
                 <td>{s.email}</td>
-                <td><span className={`badge ${s.role === 'super_admin' ? 'acc' : 'mute'}`}>{s.role === 'super_admin' ? 'Super admin' : 'Cafe staff'}</span></td>
-                <td>{s.cafeName ?? <span style={{ color: 'var(--faint)' }}>All cafes</span>}</td>
-                <td style={{ color: 'var(--sub)' }}>{shortDate(s.createdAt)}</td>
-                <td className="num">
-                  <button className="link" onClick={() => newPassword(s)}>New password</button>
-                  {s.userId !== myId && <button className="link" style={{ color: 'var(--red)', marginLeft: 14 }} onClick={() => remove(s)}>Remove</button>}
+                <td className="small nowrap">{s.passwordSetAt ? `changed ${shortDate(s.passwordSetAt)}` : '—'}</td>
+                <td className="num nowrap">
+                  <button className="link" onClick={() => setEditing(s)}>Change email</button>
+                  <button className="link" style={{ marginLeft: 14 }} onClick={() => setPw({ who: s.name || s.email, path: `/v1/admin/staff/${s.userId}/password` })}>New password</button>
+                  <button className="link" style={{ color: 'var(--red)', marginLeft: 14 }} onClick={() => remove(s)}>Remove</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {staff.data?.length === 0 && <div className="empty">No staff logins yet.</div>}
+        {staff.data && !pg.total && <Empty>{chips.length ? 'No logins match.' : 'No cafe logins yet.'}</Empty>}
+        <Pager page={pg.page} pageSize={Number(f.pageSize)} total={pg.total} onPage={(p) => set({ page: String(p) })} onSize={(x) => set({ pageSize: String(x) })} />
       </div>
-      {adding && cafes.data && <StaffForm cafes={cafes.data} onClose={() => setAdding(false)} onSaved={staff.reload} />}
+      {editing && <EmailForm s={editing} onClose={() => setEditing(null)} onSaved={staff.reload} />}
+      {pw && <PasswordModal target={pw} onClose={() => setPw(null)} onDone={() => void staff.reload()} />}
     </main>
   );
 }
 
-function StaffForm({ cafes, onClose, onSaved }: { cafes: Cafe[]; onClose: () => void; onSaved: () => Promise<void> }) {
-  const [d, setD] = useState({ name: '', email: '', password: '', role: 'cafe_staff' as Role, cafeId: cafes[0]?.id ?? '' });
-  const set = <K extends keyof typeof d>(k: K, v: (typeof d)[K]) => setD((x) => ({ ...x, [k]: v }));
-
+function EmailForm({ s, onClose, onSaved }: { s: StaffRow; onClose: () => void; onSaved: () => Promise<void> }) {
+  const [d, setD] = useState({ name: s.name, email: s.email });
   async function save() {
-    await api.post('/v1/admin/staff', { ...d, cafeId: d.role === 'cafe_staff' ? d.cafeId : null });
+    const r = await api.patch<{ loggedOut: boolean }>(`/v1/admin/staff/${s.userId}`, d);
+    if (r.loggedOut) alert(`${s.cafeName ?? 'The cafe'} was logged out on every device. Share the new email privately.`);
     await onSaved();
   }
-
   return (
-    <FormModal title="New staff login" submitLabel="Create login" onClose={onClose} onSubmit={save}>
-      <Field label="Name" full><input className="field" required value={d.name} onChange={(e) => set('name', e.target.value)} /></Field>
-      <Field label="Email" full><input className="field" type="email" required value={d.email} onChange={(e) => set('email', e.target.value)} /></Field>
-      <Field label="Password" full>
-        <input className="field" type="text" required minLength={8} value={d.password} placeholder="At least 8 characters"
-          onChange={(e) => set('password', e.target.value)} />
-      </Field>
-      <Field label="Role" full>
-        <div className="wrap">
-          <button type="button" className={`pill${d.role === 'cafe_staff' ? ' on' : ''}`} onClick={() => set('role', 'cafe_staff')}>Cafe staff</button>
-          <button type="button" className={`pill${d.role === 'super_admin' ? ' on' : ''}`} onClick={() => set('role', 'super_admin')}>Super admin</button>
-        </div>
-      </Field>
-      {d.role === 'cafe_staff' && (
-        <Field label="Cafe" full>
-          <select className="field" value={d.cafeId} onChange={(e) => set('cafeId', e.target.value)}>
-            {cafes.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
-          </select>
-        </Field>
-      )}
+    <FormModal title={`Login of ${s.cafeName ?? s.name}`} onClose={onClose} onSubmit={save}>
+      <Field label="Name" full><input className="field" required value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} /></Field>
+      <Field label="Login email" full><input className="field" type="email" required value={d.email} onChange={(e) => setD({ ...d, email: e.target.value })} /></Field>
+      <div className="note-warn">Changing the email logs the cafe out on every device.</div>
     </FormModal>
   );
 }
+

@@ -15,8 +15,7 @@ cp .env.example .env.local   # then fill in
 | Variable | |
 |---|---|
 | `NEXT_PUBLIC_API_URL` | TowerBites API, e.g. `http://localhost:4000` |
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase project (email + password login, realtime board updates) |
-| `NEXT_PUBLIC_DEV_AUTH` | `true` = skip Supabase, any password, token `dev:<email>` (API needs `DEV_AUTH=true`) |
+| `NEXT_PUBLIC_DEV_AUTH` | `true` = dev mode: any password, token `dev:<email>` (API needs `DEV_AUTH=true`) |
 
 Dev logins: `admin@towerbites.dev` (super admin), `cafe@towerbites.dev` (Krunchy Kafe).
 

@@ -11,6 +11,7 @@ export function FormModal({ title, wide, submitLabel = 'Save', onClose, onSubmit
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    e.stopPropagation(); // a popup opened from inside a page form must not submit that form too
     setBusy(true);
     setError('');
     try {

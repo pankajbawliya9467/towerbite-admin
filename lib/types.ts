@@ -1,5 +1,7 @@
 export type Role = 'cafe_staff' | 'super_admin';
-export type Staff = { userId: string; role: Role; cafeId: string | null; name: string };
+/** `<section>.<action>`, e.g. `menu.edit`, `cafes.board` (list in lib/perms.ts). */
+export type Permission = `${string}.${string}`;
+export type Staff = { userId: string; role: Role; cafeId: string | null; name: string; isSuper?: boolean; permissions?: Permission[] };
 export type Profile = { id: string; name: string; phone: string | null; email: string | null; staff: Staff | null };
 
 export type OrderStatus = 'placed' | 'preparing' | 'out_for_delivery' | 'delivered' | 'rejected' | 'cancelled';
@@ -27,20 +29,28 @@ export type Category = { id: string; cafeId: string; parentId: string | null; na
 export type MenuItem = {
   id: string; cafeId: string; categoryId: string | null; name: string; description: string; price: number; isVeg: boolean;
   emoji: string; imageUrl: string | null; isAvailable: boolean; isPopular: boolean; sort: number;
+  /** false = hidden from customers (still on the cafe's list) */
+  isActive?: boolean;
 };
 export type CafeWithMenu = Cafe & { categories: Category[]; items: MenuItem[] };
 export type CafeStats = { orders: number; delivered: number; sales: number; codCollected: number; active: number };
 
 export type Location = { id: string; slug: string; name: string; area: string; city: string; isActive: boolean };
 export type Tower = { id: string; locationId: string; name: string; sort: number };
-export type StaffRow = Staff & { cafeName: string | null; email: string; createdAt: string };
+export type StaffRow = Staff & {
+  cafeName: string | null; email: string; createdAt: string; passwordSetAt: string | null; activeLogins: number;
+};
+export type AdminRow = {
+  id: string; name: string; email: string; isSuper: boolean; permissions: Permission[]; isActive: boolean;
+  createdAt: string; passwordSetAt: string | null; activeLogins: number;
+};
 export type UserRow = {
   id: string; name: string; phone: string | null; email: string | null; company: string; tower: string; floor: string;
   desk: string; locationName: string | null; orderCount: number; spent: number; createdAt: string;
 };
 export type AdminStats = {
-  ordersToday: number; salesToday: number; activeOrders: number; users: number; cafes: number; locations: number;
-  byCafe: { id: string; name: string; emoji: string; locationName: string; orders: number; sales: number }[];
+  ordersToday: number; salesToday: number | null; activeOrders: number; users: number; cafes: number; locations: number;
+  byCafe: { id: string; name: string; emoji: string; locationName: string; orders: number; sales: number | null }[];
 };
 
 export type ReportTotals = { sales: number; orders: number; delivered: number; cancelled: number; rejected: number; all: number; avgOrder: number; lostPct: number };

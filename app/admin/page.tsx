@@ -8,34 +8,58 @@ import { adminCafe } from '@/components/CafeContext';
 import { PageHead } from '@/components/PageHead';
 import { StatTile } from '@/components/StatTile';
 import { Icon } from '@/components/Icon';
+import { useSession } from '@/components/Session';
+import { can, SECTIONS, summary } from '@/lib/perms';
 
 export default function Dashboard() {
-  const { data: s, error } = useLoad<AdminStats>('/v1/admin/stats', 15000);
-  const live = useLoad<Order[]>('/v1/admin/orders?limit=8', 10000);
+  const { state } = useSession();
+  const staff = state.status === 'ready' ? state.me.staff : null;
+  const reports = can(staff, 'reports.view');
+  const orders = can(staff, 'orders.view');
+  const { data: s, error } = useLoad<AdminStats>(reports ? '/v1/admin/stats' : null, 15000);
+  const live = useLoad<Order[]>(orders ? '/v1/admin/orders?limit=8' : null, 10000);
   const router = useRouter();
   const openBoard = (id: string) => {
     adminCafe.set(id);
     router.push('/cafe');
   };
   const top = (s?.byCafe ?? []).slice(0, 6);
-  const best = Math.max(1, ...top.map((c) => c.sales));
+  const money = s?.salesToday != null;
+  const best = Math.max(1, ...top.map((c) => (money ? c.sales ?? 0 : c.orders)));
   const date = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' });
+  if (!reports) {
+    return (
+      <main className="page">
+        <PageHead title={`Hi${staff?.name ? `, ${staff.name}` : ''}`} sub={date} />
+        <div className="card" style={{ padding: 24 }}>
+          <div className="h2">Your sections</div>
+          <div className="wrap" style={{ marginTop: 12 }}>
+            {SECTIONS.map((x) => {
+              const t = summary(staff?.permissions ?? [], x);
+              return t && <span key={x.key} className="badge mute">{x.short} · {t}</span>;
+            })}
+          </div>
+          <div className="small" style={{ marginTop: 12 }}>Pick a section from the menu. Ask a super admin if you need more access.</div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="page">
       <PageHead title="Dashboard" sub={`${date} · all locations`}>
-        <Link href="/admin/cafes" className="btn sm"><Icon name="plus" /> Add cafe</Link>
+        {can(staff, 'cafes.add') && <Link href="/admin/cafes/new" className="btn sm"><Icon name="plus" /> Add cafe</Link>}
       </PageHead>
       {error && <div className="err">{error}</div>}
       <div className="stats">
         <StatTile label="Orders today" value={s?.ordersToday ?? '–'} sub="not counting cancelled" tint="var(--accentSoft)" dot="var(--accent)" />
-        <StatTile label="Sales today" value={s ? rupees(s.salesToday) : '–'} sub="delivered orders" tint="var(--greenSoft)" dot="var(--greenDot)" />
+        <StatTile label="Sales today" value={s ? (money ? rupees(s.salesToday!) : 'Hidden') : '–'} sub="delivered orders" tint="var(--greenSoft)" dot="var(--greenDot)" />
         <StatTile label="Active right now" value={s?.activeOrders ?? '–'} sub="new, preparing or on the way" tint="var(--amberSoft)" dot="#D97706" />
         <StatTile label="Employees" value={s?.users ?? '–'} sub={s ? `${s.cafes} cafes · ${s.locations} locations` : ''} tint="var(--blueSoft)" dot="#2563EB" />
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start', marginTop: 18 }}>
-        <section className="card" style={{ flex: '999 1 480px', minWidth: 0, padding: '18px 0 6px' }}>
+        {orders && <section className="card" style={{ flex: '999 1 480px', minWidth: 0, padding: '18px 0 6px' }}>
           <div className="row" style={{ padding: '0 20px 6px' }}>
             <div className="h2" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 8, height: 8, borderRadius: 4, background: 'var(--greenDot)' }} />Latest orders
@@ -59,7 +83,7 @@ export default function Dashboard() {
             </table>
             {live.data && !live.data.length && <div className="empty">No orders yet.</div>}
           </div>
-        </section>
+        </section>}
 
         <section className="card" style={{ flex: '1 1 300px', padding: 20 }}>
           <div className="h2">Top cafes today</div>
@@ -67,12 +91,12 @@ export default function Dashboard() {
             {top.map((c) => (
               <div key={c.id}>
                 <div className="row" style={{ fontSize: 14, fontWeight: 700 }}>
-                  <span>{c.emoji} {c.name}</span><span>{rupees(c.sales)}</span>
+                  <span>{c.emoji} {c.name}</span><span>{money ? rupees(c.sales ?? 0) : `${c.orders} orders`}</span>
                 </div>
-                <div className="bar"><i style={{ width: `${Math.round((c.sales / best) * 100)}%` }} /></div>
+                <div className="bar"><i style={{ width: `${Math.round(((money ? c.sales ?? 0 : c.orders) / best) * 100)}%` }} /></div>
                 <div className="row" style={{ marginTop: 4 }}>
                   <span className="small">{c.orders} orders · {c.locationName}</span>
-                  <button className="link" style={{ fontSize: 13 }} onClick={() => openBoard(c.id)}><Icon name="board" /> Live board</button>
+                  {can(staff, 'cafes.board') && <button className="link" style={{ fontSize: 13 }} onClick={() => openBoard(c.id)}><Icon name="board" /> Live board</button>}
                 </div>
               </div>
             ))}

@@ -1,7 +1,7 @@
 import { API_URL, DEV_AUTH } from './config';
 
 // Staff login only talks to the TowerBites API (email + password → our own session token).
-// Nothing here knows about Supabase. Dev mode: any password, token `dev:<email>`.
+// Nothing here talks to the database directly. Dev mode: any password, token `dev:<email>`.
 const DEV_KEY = 'tb.devToken';
 const SESSION_KEY = 'tb.crm.session';
 const API = API_URL.replace(/\/$/, '');
@@ -34,8 +34,9 @@ export async function getToken(): Promise<string | null> {
     if (DEV_AUTH) return localStorage.getItem(DEV_KEY);
     const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
+    // The server decides when a login ends (it extends it while used); a 401 sends us back to the login page.
     const s = JSON.parse(raw) as Session;
-    if (new Date(s.expiresAt).getTime() > Date.now()) return s.token;
+    if (s.token) return s.token;
     localStorage.removeItem(SESSION_KEY);
   } catch {
     /* storage blocked or corrupted: logged out */

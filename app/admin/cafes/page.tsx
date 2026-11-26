@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Empty, SearchBox } from '@/components/ListTools';
 import { useRouter } from 'next/navigation';
 import { api, qs } from '@/lib/api';
 import { useLoad } from '@/lib/useLoad';
@@ -8,15 +9,24 @@ import { adminCafe } from '@/components/CafeContext';
 import { PageHead } from '@/components/PageHead';
 import { FoodTile } from '@/components/FoodTile';
 import { Icon } from '@/components/Icon';
-import { CafeForm, type CafeDraft } from './CafeForm';
+import { useCan } from '@/components/useCan';
 
 export default function CafesPage() {
   const router = useRouter();
   const [locationId, setLocationId] = useState('');
   const locations = useLoad<Location[]>('/v1/admin/locations');
   const cafes = useLoad<Cafe[]>(`/v1/admin/cafes${qs({ locationId })}`);
-  const [editing, setEditing] = useState<CafeDraft | null>(null);
   const [ordering, setOrdering] = useState(false);
+  const [search, setSearch] = useState('');
+  const [state, setState] = useState('');
+  const shown = useMemo(() => {
+    const t = search.toLowerCase();
+    return (cafes.data ?? []).filter((c) =>
+      (!t || `${c.name} ${c.cuisines} ${c.place}`.toLowerCase().includes(t))
+      && (!state || (state === 'open' ? c.isActive && c.isOpen : state === 'closed' ? c.isActive && !c.isOpen : state === 'inactive' ? !c.isActive : true)));
+  }, [cafes.data, search, state]);
+  const ok = useCan();
+  const canEdit = ok('cafes.edit') || ok('cafes.openclose') || ok('cafes.logins') || ok('locations.geo');
   const locName = (id: string) => locations.data?.find((l) => l.id === id)?.name ?? '';
 
   const go = (cafe: Cafe, path: string) => {
@@ -37,8 +47,8 @@ export default function CafesPage() {
   return (
     <main className="page">
       <PageHead title="Cafes" sub="Every cafe on TowerBites, its details and its live order board.">
-        <button className="btn sm" disabled={!locations.data?.length}
-          onClick={() => setEditing({ locationId: locationId || locations.data![0].id })}><Icon name="plus" /> Add cafe</button>
+        {ok('cafes.add') && <button className="btn sm" disabled={!locations.data?.length}
+          onClick={() => router.push(`/admin/cafes/new${locationId ? `?location=${locationId}` : ''}`)}><Icon name="plus" /> Add cafe</button>}
       </PageHead>
       <div className="row" style={{ marginBottom: 24, gap: 12, flexWrap: 'wrap' }}>
         <div className="wrap">
@@ -47,18 +57,28 @@ export default function CafesPage() {
             <button key={l.id} className={`pill${locationId === l.id ? ' on' : ''}`} onClick={() => setLocationId(l.id)}>{l.name}</button>
           ))}
         </div>
-        <button className="btn sec sm" onClick={() => setOrdering(!ordering)} disabled={!locationId}
+        {ok('cafes.order') && <button className="btn sec sm" onClick={() => setOrdering(!ordering)} disabled={!locationId}
           title={locationId ? undefined : 'Pick a building first'}>
           {ordering ? 'Done' : 'Order in app'}
-        </button>
+        </button>}
       </div>
-      {!locationId && <p className="small" style={{ margin: '-12px 0 20px' }}>Pick a building to change the order its cafes show in the app.</p>}
-      {ordering && locationId && cafes.data && (
+      {ok('cafes.order') && !locationId && <p className="small" style={{ margin: '-12px 0 20px' }}>Pick a building to change the order its cafes show in the app.</p>}
+      {ordering && ok('cafes.order') && locationId && cafes.data && (
         <CafeOrder key={locationId} locationId={locationId} cafes={cafes.data} onSaved={cafes.reload} />
       )}
+      {!ordering && (
+        <div className="lt-bar" style={{ marginTop: -8, marginBottom: 18 }}>
+          <SearchBox value={search} onChange={setSearch} placeholder="Cafe, cuisine or place" />
+          <select className="field lt-sel" value={state} aria-label="Cafe status" onChange={(e) => setState(e.target.value)}>
+            <option value="">Every cafe</option><option value="open">Open now</option><option value="closed">Closed now</option><option value="inactive">Inactive</option>
+          </select>
+          {cafes.data && <span className="small">{shown.length} of {cafes.data.length}</span>}
+        </div>
+      )}
       {cafes.error && <div className="err">{cafes.error}</div>}
+      {cafes.data && !shown.length && <div className="card"><Empty>No cafes match.</Empty></div>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
-        {cafes.data?.map((c) => (
+        {shown.map((c) => (
           <div key={c.id} className="card" style={{ overflow: 'hidden', opacity: c.isActive ? 1 : 0.65 }}>
             <div style={{ height: 132, background: c.coverColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 56, position: 'relative' }}>
               {c.imageUrl ? <img src={c.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.emoji}
@@ -76,22 +96,19 @@ export default function CafesPage() {
               <div className="sub" style={{ marginTop: 4, fontSize: 14 }}>{[c.cuisines, c.place].filter(Boolean).join(' · ')}</div>
               <div className="small" style={{ marginTop: 2 }}>{locName(c.locationId)} · {c.etaMin}–{c.etaMax} min</div>
               <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
-                <button className="btn sm" style={{ flex: 1 }} onClick={() => go(c, '/cafe')}><Icon name="board" /> Live board</button>
-                <button className="btn sec sm" onClick={() => go(c, '/admin/products')}>Menu</button>
-                <button className="btn sec sm" onClick={() => setEditing(c)} aria-label="Edit cafe"><Icon name="edit" /></button>
+                {ok('cafes.board') && <button className="btn sm" style={{ flex: 1 }} onClick={() => go(c, '/cafe')}><Icon name="board" /> Live board</button>}
+                {ok('menu.view') && <button className="btn sec sm" style={ok('cafes.board') ? undefined : { flex: 1 }} onClick={() => go(c, '/admin/products')}>Menu</button>}
+                {canEdit && <button className="btn sec sm" onClick={() => router.push(`/admin/cafes/${c.id}`)} aria-label="Edit cafe"><Icon name="edit" /></button>}
               </div>
-              <button className="link" style={{ marginTop: 12, fontSize: 13, color: c.isActive ? 'var(--sub)' : 'var(--green)' }}
+              {ok('cafes.delete') && <button className="link" style={{ marginTop: 12, fontSize: 13, color: c.isActive ? 'var(--sub)' : 'var(--green)' }}
                 onClick={() => setActive(c, !c.isActive)}>
                 {c.isActive ? 'Make inactive (hide from app)' : 'Make active again'}
-              </button>
+              </button>}
             </div>
           </div>
         ))}
       </div>
       {cafes.data?.length === 0 && <div className="card empty">No cafes here yet.</div>}
-      {editing && locations.data && (
-        <CafeForm draft={editing} locations={locations.data} onClose={() => setEditing(null)} onSaved={cafes.reload} />
-      )}
     </main>
   );
 }

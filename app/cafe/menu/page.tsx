@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import type { CafeWithMenu, MenuItem } from '@/lib/types';
 import { MenuManager } from '@/components/MenuManager';
+import { MinOrder } from './MinOrder';
 
 export default function CafeMenuPage() {
   const [menu, setMenu] = useState<CafeWithMenu | null>(null);
@@ -32,6 +33,7 @@ export default function CafeMenuPage() {
           <p className="sub">Switch an item off when it runs out today. ★ puts it in Popular. Hide takes it off the menu (seasonal or paused dishes) until you show it again.</p>
         </div>
       </div>
+      <MinOrder />
       {menu && <MenuManager categories={menu.categories} items={menu.items} coverColor={menu.coverColor} onAvailable={(i, v) => change(i, { isAvailable: v })} onPopular={(i, v) => change(i, { isPopular: v })} onHidden={setHidden} />}
     </main>
   );

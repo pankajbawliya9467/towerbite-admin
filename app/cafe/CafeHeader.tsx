@@ -51,7 +51,9 @@ export function CafeHeader() {
     <Sidebar
       brand={
         <>
-          <span className="side-emoji" style={{ background: cafe.coverColor }}>{cafe.emoji}</span>
+          <span className="side-emoji" style={{ background: cafe.coverColor }}>
+            {cafe.logoUrl ? <img src={cafe.logoUrl} alt="" className="side-logo" /> : cafe.emoji}
+          </span>
           <span style={{ minWidth: 0 }}>
             <span style={{ display: 'block', fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cafe.name}</span>
             <small style={{ display: 'block', letterSpacing: 0 }}>on TowerBites</small>

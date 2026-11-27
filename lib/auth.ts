@@ -8,10 +8,19 @@ const API = API_URL.replace(/\/$/, '');
 
 type Session = { token: string; expiresAt: string };
 
-export async function signIn(email: string, password: string): Promise<void> {
+/**
+ * Admins need a second step after the password: a code from their authenticator app (`code`), or on their first
+ * login, scanning a new QR code first (`setup`). Cafe logins are signed in straight away (`done`).
+ */
+export type SignInStep =
+  | { step: 'done' }
+  | { step: 'code'; challenge: string; expiresAt: string }
+  | { step: 'setup'; challenge: string; expiresAt: string; secret: string; otpauthUrl: string; email: string };
+
+export async function signIn(email: string, password: string): Promise<SignInStep> {
   if (DEV_AUTH) {
     localStorage.setItem(DEV_KEY, `dev:${email.trim().toLowerCase()}`);
-    return;
+    return { step: 'done' };
   }
   let res: Response;
   try {
@@ -26,7 +35,38 @@ export async function signIn(email: string, password: string): Promise<void> {
   }
   const data = await res.json().catch(() => null);
   if (!res.ok) throw new Error(data?.error ?? 'Could not log in');
+  if (data?.twoFactor === 'code') return { step: 'code', challenge: data.challenge, expiresAt: data.expiresAt };
+  if (data?.twoFactor === 'setup') {
+    return { step: 'setup', challenge: data.challenge, expiresAt: data.expiresAt, secret: data.secret, otpauthUrl: data.otpauthUrl, email: data.email };
+  }
   localStorage.setItem(SESSION_KEY, JSON.stringify({ token: data.token, expiresAt: data.expiresAt } satisfies Session));
+  return { step: 'done' };
+}
+
+/**
+ * Admin login, step 2: the code from the authenticator app (or a backup code). Saves the login.
+ * After a first-time setup the answer carries the backup codes, shown once.
+ */
+export async function finishTwoFactor(challenge: string, code: string): Promise<{ backupCodes: string[] | null; usedBackup: boolean; backupCodesLeft: number }> {
+  let res: Response;
+  try {
+    res = await fetch(`${API}/v1/auth/staff/2fa`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challenge, code: code.trim() }),
+      cache: 'no-store',
+    });
+  } catch {
+    throw new Error(`Can't reach the TowerBites server. Check your internet and try again.`);
+  }
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const err = new Error(data?.error ?? 'Could not check the code') as Error & { expired?: boolean };
+    err.expired = /expired|log in again|password again/i.test(err.message);
+    throw err;
+  }
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ token: data.token, expiresAt: data.expiresAt } satisfies Session));
+  return { backupCodes: data.backupCodes ?? null, usedBackup: !!data.usedBackup, backupCodesLeft: data.backupCodesLeft ?? 0 };
 }
 
 export async function getToken(): Promise<string | null> {

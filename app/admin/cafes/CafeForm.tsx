@@ -20,7 +20,7 @@ const TAGS = ['coffee', 'snacks', 'meals', 'healthy'];
 const defaults = {
   name: '', slug: '', cuisines: '', place: '', emoji: '☕', coverColor: '#FDEBDD', phone: null, imageUrl: null, logoUrl: null,
   etaMin: 10, etaMax: 15, tags: [] as string[], isOpen: true, acceptingOrders: true,
-  lat: null as number | null, lng: null as number | null, geoRadiusM: 300, geoCheck: false,
+  lat: null as number | null, lng: null as number | null, geoRadiusM: 300, geoCheck: false, minOrder: 0,
 };
 
 /** New / edit cafe, on its own page: Details, Location check and (for an existing cafe) its logins. */
@@ -49,6 +49,7 @@ export function CafeEditor({ draft, locations, startTab }: { draft: CafeDraft; l
       coverColor: d.coverColor, phone: d.phone || null, imageUrl: d.imageUrl, logoUrl: d.logoUrl, etaMin: Number(d.etaMin), etaMax: Number(d.etaMax),
       tags: d.tags, isOpen: d.isOpen, acceptingOrders: d.acceptingOrders,
       lat: d.lat, lng: d.lng, geoRadiusM: Number(d.geoRadiusM), geoCheck: d.geoCheck && d.lat != null,
+      minOrder: Math.max(0, Math.round(Number(d.minOrder) || 0)),
     };
     if (d.geoCheck && d.lat == null) throw new Error('Put the cafe on the map before turning on the location check.');
     if (!d.name.trim() || !d.slug.trim()) throw new Error('Name and web address are needed (Details tab).');
@@ -128,6 +129,9 @@ export function CafeEditor({ draft, locations, startTab }: { draft: CafeDraft; l
                 <span className="sub">to</span>
                 <input className="field" type="number" min={1} value={d.etaMax} onChange={(e) => set('etaMax', Number(e.target.value))} />
               </div>
+            </Field>
+            <Field label="Minimum order (₹) · 0 = none">
+              <input className="field" type="number" min={0} max={10000} step={10} value={d.minOrder ?? 0} onChange={(e) => set('minOrder', Number(e.target.value))} />
             </Field>
             <Field label="Emoji">
               <input className="field" style={{ fontSize: 22 }} value={d.emoji} maxLength={8} onChange={(e) => set('emoji', e.target.value)} />

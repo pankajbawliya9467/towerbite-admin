@@ -44,6 +44,13 @@ export default function AdminsPage() {
     await admins.reload();
   }
 
+  async function resetTwoFactor(a: AdminRow) {
+    const msg = `Reset 2-step login for ${a.name || a.email}?\n\nUse this when they lost their phone. They are logged out everywhere, their backup codes stop working, and they scan a new QR code at their next login.`;
+    if (!confirm(msg)) return;
+    await api.post(`/v1/admin/admins/${a.id}/2fa/reset`).then(() => alert('Done. They set up 2-step login again at their next login.'), (e: Error) => alert(e.message));
+    await admins.reload();
+  }
+
   return (
     <main className="page">
       <PageHead title="Admins" sub="People who run TowerBites. Cafe logins are under each cafe.">
@@ -70,7 +77,12 @@ export default function AdminsPage() {
               const locked = !me?.isSuper && (a.isSuper || a.permissions.some((p) => !me?.permissions?.includes(p)));
               return (
                 <tr key={a.id} style={a.isActive ? undefined : { opacity: 0.6 }}>
-                  <td><b>{a.name || '—'}</b><div className="small">{a.email}</div></td>
+                  <td>
+                    <b>{a.name || '—'}</b><div className="small">{a.email}</div>
+                    {a.isActive && (a.twoFactor
+                      ? <span className="badge ok" style={{ marginTop: 6 }} title="Logs in with a code from an authenticator app">2-step on</span>
+                      : <span className="badge warn" style={{ marginTop: 6 }} title="Sets it up at their next login">2-step at next login</span>)}
+                  </td>
                   <td>
                     <div className="wrap" style={{ gap: 6 }}>
                       {!a.isActive ? <span className="badge mute">Turned off</span>
@@ -87,6 +99,7 @@ export default function AdminsPage() {
                       <>
                         {a.isActive && <button className="link" onClick={() => router.push(`/admin/admins/${a.id}`)}>Edit</button>}
                         {a.isActive && <button className="link" style={{ marginLeft: 14 }} onClick={() => setPw({ who: a.name || a.email, path: `/v1/admin/admins/${a.id}/password` })}>New password</button>}
+                        {a.isActive && a.twoFactor && <button className="link" style={{ marginLeft: 14 }} onClick={() => resetTwoFactor(a)}>Reset 2-step</button>}
                         <button className="link" style={{ marginLeft: 14, color: a.isActive ? 'var(--red)' : 'var(--green)' }} onClick={() => toggle(a)}>
                           {a.isActive ? 'Turn off' : 'Turn on'}
                         </button>

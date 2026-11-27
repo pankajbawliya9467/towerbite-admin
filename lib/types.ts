@@ -24,6 +24,8 @@ export type Cafe = {
   coverColor: string; imageUrl: string | null; logoUrl: string | null; phone: string | null; rating: number; ratingCount: number;
   etaMin: number; etaMax: number; isOpen: boolean; acceptingOrders: boolean; tags: string[]; sort: number; isActive: boolean;
   lat: number | null; lng: number | null; geoRadiusM: number; geoCheck: boolean;
+  /** Minimum order value in ₹ (items + combos); 0 = none. */
+  minOrder: number;
 };
 export type Category = { id: string; cafeId: string; parentId: string | null; name: string; sort: number };
 export type MenuItem = {
@@ -45,6 +47,8 @@ export type StaffRow = Staff & {
 export type AdminRow = {
   id: string; name: string; email: string; isSuper: boolean; permissions: Permission[]; isActive: boolean;
   createdAt: string; passwordSetAt: string | null; activeLogins: number;
+  /** Logs in with an authenticator-app code (false: sets it up at the next login). */
+  twoFactor: boolean;
 };
 export type UserRow = {
   id: string; name: string; phone: string | null; email: string | null; company: string; tower: string; floor: string;

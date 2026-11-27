@@ -2,9 +2,10 @@
 import { useState, type FormEvent } from 'react';
 import { api } from '@/lib/api';
 import { Icon } from './Icon';
+import { TwoFactorCard } from './TwoFactor';
 
 /** Change your own password with the current one. This device stays logged in; other devices are logged out. */
-export function AccountForm({ email, forgotHint }: { email: string | null; forgotHint: string }) {
+export function AccountForm({ email, forgotHint, admin }: { email: string | null; forgotHint: string; admin?: boolean }) {
   const [d, setD] = useState({ current: '', next: '', again: '' });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -49,6 +50,7 @@ export function AccountForm({ email, forgotHint }: { email: string | null; forgo
         <button className="btn" disabled={busy}>{busy ? 'Updating…' : 'Update password'}</button>
         <div className="small" style={{ textAlign: 'center' }}>{forgotHint}</div>
       </form>
+      {admin && <TwoFactorCard email={email} />}
     </main>
   );
 }

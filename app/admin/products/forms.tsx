@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { confirmDelete } from '@/lib/confirm';
 import { api } from '@/lib/api';
-import type { Cafe, Category, MenuItem } from '@/lib/types';
+import type { Cafe, CatalogList, Category, MenuItem } from '@/lib/types';
+import { useLoad } from '@/lib/useLoad';
 import { FormCard, FormPage } from '@/components/FormPage';
 import { Field } from '@/components/Field';
 import { SwitchRow } from '@/components/Switch';
@@ -62,6 +63,13 @@ export function ItemEditor({ draft, cafe, categories }: { draft: Partial<MenuIte
     isPopular: false, sort: 0, isActive: true, ...draft, categoryId: draft.categoryId ?? (draft.id ? null : categories[0]?.id ?? null),
   });
   const tree = categoryTree(categories);
+  // Global categories (Admin → Categories). Once menus use them, every product needs one.
+  const catalog = useLoad<CatalogList>('/v1/admin/catalog');
+  const global = !!catalog.data?.enabled;
+  const [catalogId, setCatalogId] = useState<string>(draft.catalogCategoryId ?? '');
+  const order = (a: { sort: number; name: string }, b: { sort: number; name: string }) => a.sort - b.sort || a.name.localeCompare(b.name);
+  const usable = (catalog.data?.categories ?? []).filter((c) => c.isActive || c.id === draft.catalogCategoryId);
+  const leafGroups = usable.filter((c) => !c.parentId).sort(order).map((m) => ({ main: m, subs: usable.filter((c) => c.parentId === m.id).sort(order) }));
   const set = <K extends keyof typeof d>(k: K, v: (typeof d)[K]) => setD((x) => ({ ...x, [k]: v }));
   const ok = useCan();
   const isNew = !d.id;
@@ -75,6 +83,7 @@ export function ItemEditor({ draft, cafe, categories }: { draft: Partial<MenuIte
       categoryId: d.categoryId || null, name: d.name, description: d.description, price: Number(d.price), isVeg: d.isVeg,
       emoji: d.emoji, imageUrl: d.imageUrl, isAvailable: d.isAvailable, isPopular: d.isPopular, sort: Number(d.sort),
       isActive: d.isActive !== false,
+      catalogCategoryId: catalogId || null,
     };
     if (d.id) await api.patch(`/v1/admin/menu-items/${d.id}`, body);
     else await api.post('/v1/admin/menu-items', { ...body, cafeId: cafe.id });
@@ -136,15 +145,27 @@ export function ItemEditor({ draft, cafe, categories }: { draft: Partial<MenuIte
           <Field label="Description" full>
             <input className="field" value={d.description} maxLength={160} placeholder="Ginger, cardamom, brewed fresh" onChange={(e) => set('description', e.target.value)} />
           </Field>
-          <Field label="Category">
-            <select className="field" value={d.categoryId ?? ''} onChange={(e) => set('categoryId', e.target.value || null)}>
-              <option value="">No category</option>
-              {tree.map((m) => [
-                <option key={m.id} value={m.id}>{m.name}</option>,
-                ...m.subs.map((s) => <option key={s.id} value={s.id}>{'   '}↳ {m.name} › {s.name}</option>),
-              ])}
+          <Field label={global ? 'Category' : 'Category (all cafes)'}>
+            <select className="field" required={global} value={catalogId} onChange={(e) => setCatalogId(e.target.value)}>
+              <option value="">{global ? 'Pick a category…' : 'Not set yet'}</option>
+              {leafGroups.map(({ main, subs }) => subs.length ? (
+                <optgroup key={main.id} label={main.name}>
+                  {subs.map((s) => <option key={s.id} value={s.id}>{s.name}{s.isActive ? '' : ' (off)'}</option>)}
+                </optgroup>
+              ) : <option key={main.id} value={main.id}>{main.name}{main.isActive ? '' : ' (off)'}</option>)}
             </select>
           </Field>
+          {!global && (
+            <Field label="Cafe's own category (until the switch is on)">
+              <select className="field" value={d.categoryId ?? ''} onChange={(e) => set('categoryId', e.target.value || null)}>
+                <option value="">No category</option>
+                {tree.map((m) => [
+                  <option key={m.id} value={m.id}>{m.name}</option>,
+                  ...m.subs.map((s) => <option key={s.id} value={s.id}>{'   '}↳ {m.name} › {s.name}</option>),
+                ])}
+              </select>
+            </Field>
+          )}
           <Field label="Order in category"><input className="field" type="number" value={d.sort} onChange={(e) => set('sort', Number(e.target.value))} /></Field>
         </fieldset>
       </FormCard>

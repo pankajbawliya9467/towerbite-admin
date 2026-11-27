@@ -31,6 +31,8 @@ export type MenuItem = {
   emoji: string; imageUrl: string | null; isAvailable: boolean; isPopular: boolean; sort: number;
   /** false = hidden from customers (still on the cafe's list) */
   isActive?: boolean;
+  /** the global category (Admin → Categories) */
+  catalogCategoryId?: string | null;
 };
 export type CafeWithMenu = Cafe & { categories: Category[]; items: MenuItem[] };
 export type CafeStats = { orders: number; delivered: number; sales: number; codCollected: number; active: number };
@@ -99,3 +101,20 @@ export type RatingReport = {
 };
 
 export type Rider = { id: string; name: string; phone: string | null; sort: number };
+
+/** Global categories (one list for every cafe). `parentId` null = main category. */
+export type CatalogCategory = {
+  id: string; parentId: string | null; name: string; slug: string; emoji: string; aliases: string[]; keywords: string[];
+  sort: number; isActive: boolean; products: number; cafes: number;
+};
+/** `enabled`: menus are built from the global categories (the big switch). */
+export type CatalogList = { enabled: boolean; categories: CatalogCategory[]; unassigned: number; totalProducts: number };
+/** One old per-cafe category name (all cafes that have it), and where it goes. */
+export type MappingGroup = {
+  key: string; name: string; parent: string | null; ids: string[]; cafes: number; products: number; sample: string[];
+  target: string | null; action: 'map' | 'popular' | 'skip'; useKeywords: boolean; approved: boolean; mixed: boolean; mapped: boolean;
+};
+export type CatalogProduct = {
+  id: string; name: string; emoji: string; price: number; isVeg: boolean; isActive: boolean; catalogCategoryId: string | null;
+  cafeId: string; cafeName: string; oldCategory: string | null; oldParent: string | null;
+};

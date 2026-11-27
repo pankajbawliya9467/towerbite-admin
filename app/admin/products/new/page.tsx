@@ -10,7 +10,7 @@ function NewItem() {
   return (
     <WithCafe cafeId={sp.get('cafe')}>
       {(cafe, categories) => <ItemEditor cafe={cafe} categories={categories}
-        draft={{ cafeId: cafe.id, categoryId: categories.some((c) => c.id === category) ? category! : undefined, sort: Number(sp.get('sort')) || 0 }} />}
+        draft={{ cafeId: cafe.id, categoryId: categories.some((c) => c.id === category) ? category! : undefined, catalogCategoryId: sp.get('catalog'), sort: Number(sp.get('sort')) || 0 }} />}
     </WithCafe>
   );
 }

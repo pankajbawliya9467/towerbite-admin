@@ -47,6 +47,7 @@ function AdminSidebar({ staff, name, onLogout }: { staff: Staff; name: string; o
     { href: '/admin/locations', label: 'Locations', icon: 'building' },
     { href: '/admin/cafes', label: 'Cafes', icon: 'coffee' },
     { href: '/admin/products', label: 'Products', icon: 'box' },
+    { href: '/admin/categories', label: 'Categories', icon: 'layers' },
     { href: '/admin/staff', label: 'Cafe logins', icon: 'team' },
     { href: '/admin/users', label: 'Users', icon: 'user' },
     { href: '/admin/reports', label: 'Reports', icon: 'chart' },

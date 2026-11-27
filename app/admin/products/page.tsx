@@ -1,10 +1,11 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { confirmDelete } from '@/lib/confirm';
 import { api } from '@/lib/api';
 import { useLoad } from '@/lib/useLoad';
-import type { Cafe, Category, MenuItem } from '@/lib/types';
+import type { Cafe, CatalogList, Category, MenuItem } from '@/lib/types';
+import Link from 'next/link';
 import { adminCafe } from '@/components/CafeContext';
 import { PageHead } from '@/components/PageHead';
 import { MenuManager } from '@/components/MenuManager';
@@ -19,6 +20,19 @@ export default function ProductsPage() {
   const router = useRouter();
   const [picked, setPicked] = useState<string | null>(null);
   const cafe = cafes.data?.find((c) => c.id === cafeId);
+  // Once menus use the global categories, this page shows them (the same list for every cafe, edited on
+  // Admin → Categories) instead of the cafe's own ones.
+  const catalog = useLoad<CatalogList>('/v1/admin/catalog');
+  const global = !!catalog.data?.enabled;
+  const view = useMemo(() => {
+    if (!global || !items.data || !catalog.data) return { categories: categories.data, items: items.data };
+    const used = new Set(items.data.map((i) => i.catalogCategoryId).filter(Boolean));
+    const cats = catalog.data.categories.filter((c) => used.has(c.id) || catalog.data!.categories.some((x) => x.parentId === c.id && used.has(x.id)));
+    return {
+      categories: cats.map((c) => ({ id: c.id, cafeId, parentId: c.parentId, name: c.name, sort: c.sort })) as Category[],
+      items: items.data.map((i) => ({ ...i, categoryId: i.catalogCategoryId ?? null })),
+    };
+  }, [global, items.data, catalog.data, categories.data, cafeId]);
   const ok = useCan();
   const canEditItem = ok('menu.edit') || ok('menu.price') || ok('menu.soldout');
 
@@ -63,25 +77,27 @@ export default function ProductsPage() {
         <select className="field" value={cafeId} onChange={(e) => pickCafe(e.target.value)} style={{ width: 240, height: 42, fontSize: 15 }} aria-label="Cafe">
           {cafes.data?.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
         </select>
-        {ok('menu.add') && <button className="btn sec sm" disabled={!cafe} onClick={() => router.push(`/admin/products/category/new?cafe=${cafeId}`)}>
-          <Icon name="plus" /> Category
-        </button>}
-        {ok('menu.add') && <button className="btn sm" disabled={!cafe} onClick={() => router.push(`/admin/products/new?cafe=${cafeId}${picked ? `&category=${picked}` : ''}&sort=${(items.data?.length ?? 0) + 1}`)}>
+        {global
+          ? <Link className="btn sec sm" href="/admin/categories"><Icon name="layers" /> Categories</Link>
+          : ok('menu.add') && <button className="btn sec sm" disabled={!cafe} onClick={() => router.push(`/admin/products/category/new?cafe=${cafeId}`)}>
+            <Icon name="plus" /> Category
+          </button>}
+        {ok('menu.add') && <button className="btn sm" disabled={!cafe} onClick={() => router.push(`/admin/products/new?cafe=${cafeId}${picked ? `&${global ? 'catalog' : 'category'}=${picked}` : ''}&sort=${(items.data?.length ?? 0) + 1}`)}>
           <Icon name="plus" /> Product
         </button>}
       </PageHead>
       {(categories.error || items.error) && <div className="err">{categories.error || items.error}</div>}
-      {cafe && categories.data && items.data && (
+      {cafe && view.categories && view.items && (
         <MenuManager
-          key={cafe.id}
-          categories={categories.data}
-          items={items.data}
+          key={`${cafe.id}${global ? '-global' : ''}`}
+          categories={view.categories}
+          items={view.items}
           coverColor={cafe.coverColor}
           onAvailable={ok('menu.soldout') ? setAvailable : undefined}
           onPopular={ok('menu.edit') ? setPopular : undefined}
           onHidden={ok('menu.delete') ? setHidden : undefined}
           onCategoryChange={setPicked}
-          categoryActions={(c, isMain) => (
+          categoryActions={global ? undefined : (c, isMain) => (
             <>
               {isMain && ok('menu.add') && (
                 <button type="button" title="Add sub-category" aria-label={`Add sub-category in ${c.name}`}

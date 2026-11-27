@@ -8,12 +8,13 @@ import type { Order, OrderStatus, Rider } from '@/lib/types';
 import { useCafe } from '@/components/CafeContext';
 import { OrderCard, type Action } from './OrderCard';
 import { RejectDialog, DispatchDialog } from './OrderDialogs';
+import { Icon } from '@/components/Icon';
 import styles from './board.module.css';
 
-const COLUMNS: { status: OrderStatus; title: string; badge: string; dot: string }[] = [
-  { status: 'placed', title: 'New', badge: 'warn', dot: '#D97706' },
-  { status: 'preparing', title: 'Preparing', badge: 'acc', dot: 'var(--accent)' },
-  { status: 'out_for_delivery', title: 'On the way', badge: 'info', dot: '#2563EB' },
+const COLUMNS: { status: OrderStatus; title: string; badge: string; dot: string; hint: string; empty: string }[] = [
+  { status: 'placed', title: 'New', badge: 'warn', dot: '#D97706', hint: 'Accept within 2 min', empty: "No new orders. You'll hear the bell when one comes in." },
+  { status: 'preparing', title: 'Preparing', badge: 'acc', dot: 'var(--accent)', hint: 'Send out when ready', empty: 'Nothing is being prepared.' },
+  { status: 'out_for_delivery', title: 'On the way', badge: 'info', dot: '#2563EB', hint: 'Collect the cash', empty: 'No orders out for delivery.' },
 ];
 const FRESH_MS = 15000;
 const ACTIVE: OrderStatus[] = ['placed', 'preparing', 'out_for_delivery'];
@@ -38,6 +39,8 @@ export default function BoardPage() {
   const [riders, setRiders] = useState<Rider[]>([]);
   const [lastRider, setLastRider] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  /** Find an order on a busy board: "#2041", a customer name or a desk. */
+  const [query, setQuery] = useState('');
 
   const withPending = (list: Order[]) =>
     list.map((o) => pending.current.get(o.id) ?? o).filter((o) => ACTIVE.includes(o.status));
@@ -179,10 +182,30 @@ export default function BoardPage() {
   ordersRef.current = orders;
 
   const picked = (orders ?? []).filter((o) => selected.has(o.id));
+  const q = query.trim().toLowerCase().replace(/^#/, '');
+  const matches = (o: Order) => !q || String(o.orderNo).includes(q) || o.customerName.toLowerCase().includes(q)
+    || `${o.address.tower} ${o.address.floor} ${o.address.desk} ${o.address.company}`.toLowerCase().includes(q);
+  const countOf = (s: OrderStatus) => (orders ?? []).filter((o) => o.status === s).length;
   const pickedStatus = picked[0]?.status;
 
   return (
-    <main className={styles.board}>
+    <main className={styles.wrap}>
+      <div className={styles.head}>
+        <div className={styles.title}>
+          <h1>Live orders</h1>
+          <span className={styles.live}><i />Live</span>
+          <div className={styles.summary}>
+            {COLUMNS.map((col) => (
+              <span key={col.status}><i className={styles.dot} style={{ background: col.dot }} />{col.title} <b>{countOf(col.status)}</b></span>
+            ))}
+          </div>
+        </div>
+        <label className={styles.find}>
+          <Icon name="search" />
+          <input type="search" placeholder="Order #, name or desk" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Find an order" />
+        </label>
+      </div>
+      <div className={styles.board}>
       <div className={styles.switcher} role="tablist">
         {COLUMNS.map((col) => (
           <button key={col.status} role="tab" aria-selected={mobileCol === col.status}
@@ -192,12 +215,15 @@ export default function BoardPage() {
         ))}
       </div>
       {COLUMNS.map((col) => {
-        const list = (orders ?? []).filter((o) => o.status === col.status);
+        const all = (orders ?? []).filter((o) => o.status === col.status);
+        const list = all.filter(matches);
         return (
           <section key={col.status} className={`${styles.col} ${mobileCol === col.status ? '' : styles.mobileHidden}`}>
-            <div className="row">
-              <div className="h2"><span className={styles.dot} style={{ background: col.dot }} />{col.title}</div>
-              <span className={`badge ${col.badge} ${styles.count}`}>{list.length}</span>
+            <div className={styles.colHead}>
+              <span className={styles.dot} style={{ background: col.dot }} />
+              <h2>{col.title}</h2>
+              <span className={styles.hint}>{col.hint}</span>
+              <span className={styles.count}>{all.length}</span>
             </div>
             {list.map((o) => (
               <OrderCard key={o.id} order={o} now={now} fresh={fresh.has(o.id)} riders={ridersOrdered}
@@ -208,10 +234,11 @@ export default function BoardPage() {
                 Save your delivery staff for one-tap “Send out”
               </Link>
             )}
-            {orders && !list.length && <div className={styles.empty}>No orders</div>}
+            {orders && !list.length && <div className={styles.empty}>{all.length ? 'No order matches your search.' : col.empty}</div>}
           </section>
         );
       })}
+      </div>
       {dialog?.kind === 'reject' && (
         <RejectDialog order={dialog.order} onClose={() => setDialog(null)} onConfirm={(reason) => act(dialog.order, 'reject', { reason })} />
       )}

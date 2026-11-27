@@ -46,7 +46,7 @@ export default function CafesPage() {
 
   return (
     <main className="page">
-      <PageHead title="Cafes" sub="Every cafe on TowerBites, its details and its live order board.">
+      <PageHead title="Cafes" sub="Every cafe on TowerBites. Open a cafe to manage its products, combos, lunch and logins.">
         {ok('cafes.add') && <button className="btn sm" disabled={!locations.data?.length}
           onClick={() => router.push(`/admin/cafes/new${locationId ? `?location=${locationId}` : ''}`)}><Icon name="plus" /> Add cafe</button>}
       </PageHead>
@@ -95,10 +95,17 @@ export default function CafesPage() {
               </div>
               <div className="sub" style={{ marginTop: 4, fontSize: 14 }}>{[c.cuisines, c.place].filter(Boolean).join(' · ')}</div>
               <div className="small" style={{ marginTop: 2 }}>{locName(c.locationId)} · {c.etaMin}–{c.etaMax} min</div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
-                {ok('cafes.board') && <button className="btn sm" style={{ flex: 1 }} onClick={() => go(c, '/cafe')}><Icon name="board" /> Live board</button>}
-                {ok('menu.view') && <button className="btn sec sm" style={ok('cafes.board') ? undefined : { flex: 1 }} onClick={() => go(c, '/admin/products')}>Menu</button>}
-                {canEdit && <button className="btn sec sm" onClick={() => router.push(`/admin/cafes/${c.id}`)} aria-label="Edit cafe"><Icon name="edit" /></button>}
+              <div className="cf-meta">
+                <span>★ {c.rating.toFixed(1)} <small>({c.ratingCount})</small></span>
+                {c.geoCheck && <span className="badge info">GPS check</span>}
+                {c.phone && <span className="small">{c.phone}</span>}
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                <button className="btn dark sm" style={{ flex: 1 }} onClick={() => router.push(`/admin/cafes/${c.id}/details`)}>
+                  View details <span aria-hidden="true">→</span>
+                </button>
+                {ok('cafes.board') && <button className="btn sec sm" onClick={() => go(c, '/cafe')}><Icon name="board" /> Live board</button>}
+                {canEdit && <button className="btn sec sm" onClick={() => router.push(`/admin/cafes/${c.id}`)} aria-label={`Edit ${c.name}`}><Icon name="edit" /></button>}
               </div>
               {ok('cafes.delete') && <button className="link" style={{ marginTop: 12, fontSize: 13, color: c.isActive ? 'var(--sub)' : 'var(--green)' }}
                 onClick={() => setActive(c, !c.isActive)}>

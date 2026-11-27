@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { confirmDelete } from '@/lib/confirm';
 import { api } from '@/lib/api';
@@ -12,10 +12,9 @@ import { ImageField } from '@/components/ImageField';
 import { useCan } from '@/components/useCan';
 import { categoryTree } from '@/lib/menuTree';
 
-const BACK = '/admin/products';
 
 /** New / edit category on its own page (a sub-category sits inside one main category). */
-export function CategoryEditor({ draft, cafe, categories }: { draft: Partial<Category>; cafe: Cafe; categories: Category[] }) {
+export function CategoryEditor({ draft, cafe, categories, back: BACK = '/admin/products' }: { draft: Partial<Category>; cafe: Cafe; categories: Category[]; back?: string }) {
   const router = useRouter();
   const [name, setName] = useState(draft.name ?? '');
   const [sort, setSort] = useState(draft.sort ?? 0);
@@ -34,7 +33,7 @@ export function CategoryEditor({ draft, cafe, categories }: { draft: Partial<Cat
 
   const title = draft.id ? draft.name ?? 'Category' : parent ? `New sub-category in ${parent.name}` : 'New category';
   return (
-    <FormPage crumbs={[{ label: 'Products', href: BACK }, { label: `${cafe.emoji} ${cafe.name}`, href: BACK }, { label: title }]}
+    <FormPage crumbs={[{ label: BACK.startsWith('/admin/cafes') ? 'Cafes' : 'Products', href: BACK.startsWith('/admin/cafes') ? '/admin/cafes' : BACK }, { label: `${cafe.emoji} ${cafe.name}`, href: BACK }, { label: title }]}
       title={title} back={BACK} submitLabel={draft.id ? 'Save changes' : 'Create category'} onSubmit={save}>
       <FormCard title="Category">
         <Field label="Name" full>
@@ -56,20 +55,35 @@ export function CategoryEditor({ draft, cafe, categories }: { draft: Partial<Cat
 }
 
 /** New / edit product on its own page. Each part needs its tick (name, price, stock, hide). */
-export function ItemEditor({ draft, cafe, categories }: { draft: Partial<MenuItem>; cafe: Cafe; categories: Category[] }) {
+export function ItemEditor({ draft, cafe, categories, back: BACK = '/admin/products' }: { draft: Partial<MenuItem>; cafe: Cafe; categories: Category[]; back?: string }) {
   const router = useRouter();
   const [d, setD] = useState({
-    name: '', description: '', price: 0, isVeg: true, emoji: '🍽️', imageUrl: null as string | null, isAvailable: true,
+    name: '', description: '', price: 0, isVeg: true, emoji: '', imageUrl: null as string | null, isAvailable: true,
     isPopular: false, sort: 0, isActive: true, ...draft, categoryId: draft.categoryId ?? (draft.id ? null : categories[0]?.id ?? null),
   });
   const tree = categoryTree(categories);
   // Global categories (Admin → Categories). Once menus use them, every product needs one.
   const catalog = useLoad<CatalogList>('/v1/admin/catalog');
   const global = !!catalog.data?.enabled;
-  const [catalogId, setCatalogId] = useState<string>(draft.catalogCategoryId ?? '');
+  // Two steps: the main category, then one of its sub-categories (required when it has any).
+  const [mainId, setMainId] = useState('');
+  const [subId, setSubId] = useState('');
+  const [picked, setPicked] = useState(false);
   const order = (a: { sort: number; name: string }, b: { sort: number; name: string }) => a.sort - b.sort || a.name.localeCompare(b.name);
   const usable = (catalog.data?.categories ?? []).filter((c) => c.isActive || c.id === draft.catalogCategoryId);
-  const leafGroups = usable.filter((c) => !c.parentId).sort(order).map((m) => ({ main: m, subs: usable.filter((c) => c.parentId === m.id).sort(order) }));
+  const mains = usable.filter((c) => !c.parentId).sort(order);
+  const subs = usable.filter((c) => c.parentId && c.parentId === mainId).sort(order);
+  const catalogId = subs.length ? subId : mainId;
+  useEffect(() => {
+    // Fill both from the product's category (or the one picked on the list) once the list has loaded.
+    if (picked || !catalog.data) return;
+    const start = catalog.data.categories.find((c) => c.id === draft.catalogCategoryId);
+    if (start?.parentId) {
+      setMainId(start.parentId);
+      setSubId(start.id);
+    } else if (start) setMainId(start.id);
+    setPicked(true);
+  }, [catalog.data, picked, draft.catalogCategoryId]);
   const set = <K extends keyof typeof d>(k: K, v: (typeof d)[K]) => setD((x) => ({ ...x, [k]: v }));
   const ok = useCan();
   const isNew = !d.id;
@@ -79,6 +93,8 @@ export function ItemEditor({ draft, cafe, categories }: { draft: Partial<MenuIte
   const hide = isNew ? ok('menu.add') : ok('menu.delete');
 
   async function save() {
+    if (global && !mainId) throw new Error('Pick a category');
+    if (mainId && subs.length && !subId) throw new Error('Pick a sub-category');
     const body = {
       categoryId: d.categoryId || null, name: d.name, description: d.description, price: Number(d.price), isVeg: d.isVeg,
       emoji: d.emoji, imageUrl: d.imageUrl, isAvailable: d.isAvailable, isPopular: d.isPopular, sort: Number(d.sort),
@@ -103,7 +119,7 @@ export function ItemEditor({ draft, cafe, categories }: { draft: Partial<MenuIte
   const title = isNew ? 'New product' : draft.name ?? 'Product';
   return (
     <FormPage
-      crumbs={[{ label: 'Products', href: BACK }, { label: `${cafe.emoji} ${cafe.name}`, href: BACK }, { label: title }]}
+      crumbs={[{ label: BACK.startsWith('/admin/cafes') ? 'Cafes' : 'Products', href: BACK.startsWith('/admin/cafes') ? '/admin/cafes' : BACK }, { label: `${cafe.emoji} ${cafe.name}`, href: BACK }, { label: title }]}
       title={title} back={BACK} submitLabel={isNew ? 'Create product' : 'Save changes'} onSubmit={save}
       actions={d.id && ok('menu.delete') ? <button type="button" className="btn sec sm" style={{ color: 'var(--red)' }} onClick={remove}>Delete</button> : null}
       side={
@@ -146,13 +162,16 @@ export function ItemEditor({ draft, cafe, categories }: { draft: Partial<MenuIte
             <input className="field" value={d.description} maxLength={160} placeholder="Ginger, cardamom, brewed fresh" onChange={(e) => set('description', e.target.value)} />
           </Field>
           <Field label={global ? 'Category' : 'Category (all cafes)'}>
-            <select className="field" required={global} value={catalogId} onChange={(e) => setCatalogId(e.target.value)}>
+            <select className="field" required={global} value={mainId} onChange={(e) => { setMainId(e.target.value); setSubId(''); }}>
               <option value="">{global ? 'Pick a category…' : 'Not set yet'}</option>
-              {leafGroups.map(({ main, subs }) => subs.length ? (
-                <optgroup key={main.id} label={main.name}>
-                  {subs.map((s) => <option key={s.id} value={s.id}>{s.name}{s.isActive ? '' : ' (off)'}</option>)}
-                </optgroup>
-              ) : <option key={main.id} value={main.id}>{main.name}{main.isActive ? '' : ' (off)'}</option>)}
+              {mains.map((m) => <option key={m.id} value={m.id}>{m.emoji ? `${m.emoji} ` : ''}{m.name}{m.isActive ? '' : ' (off)'}</option>)}
+            </select>
+          </Field>
+          <Field label="Sub-category">
+            <select className="field" required={subs.length > 0} disabled={!mainId || !subs.length} value={subs.length ? subId : ''}
+              onChange={(e) => setSubId(e.target.value)}>
+              <option value="">{!mainId ? 'Pick a category first' : subs.length ? 'Pick a sub-category…' : 'No sub-categories'}</option>
+              {subs.map((c) => <option key={c.id} value={c.id}>{c.name}{c.isActive ? '' : ' (off)'}</option>)}
             </select>
           </Field>
           {!global && (

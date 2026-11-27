@@ -553,3 +553,61 @@ fieldset.fs:disabled .field, fieldset.fs:disabled .switch-row, fieldset.fs:disab
 .mp-prev-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 16px; }
 .mp-prev-grid > div { display: flex; flex-direction: column; padding: 6px 10px; border-radius: 10px; background: var(--surface); }
 .mp-prev-grid > div.moved { background: var(--accentSoft); }
+
+/* Admin → Cafes cards */
+.cf-meta { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 14px; font-weight: 700; flex-wrap: wrap; }
+.cf-meta small { color: var(--sub); font-weight: 600; }
+
+/* Products list toolbar (Admin → Products and a cafe's details page) */
+.cp-tools { align-items: center; }
+
+/* Admin → Cafes → View details */
+.cd-crumbs { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.cd-head { overflow: hidden; margin-bottom: 20px; }
+.cd-cover { height: 96px; position: relative; }
+.cd-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cd-top { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; padding: 0 24px; margin-top: -42px; position: relative; }
+.cd-logo { padding: 4px; background: var(--surface); border-radius: 24px; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+.cd-logo .food { border-radius: 20px; }
+.cd-title { flex: 1; min-width: 240px; padding-bottom: 4px; }
+.cd-name { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.cd-name .h1 { font-size: 26px; }
+.cd-actions { display: flex; gap: 10px; flex-wrap: wrap; padding-bottom: 4px; }
+.cd-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 20px 24px 22px; border: 1px solid var(--line); border-radius: 16px; }
+.cd-stats > div { padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--line); }
+.cd-stats > div:first-child { border-left: 0; }
+.cd-stats b { font-size: 21px; font-weight: 800; letter-spacing: -.3px; }
+.cd-stats b small { font-size: 13px; color: var(--sub); font-weight: 600; }
+.cd-switches { gap: 8px !important; justify-content: center; min-width: 190px; }
+.cd-switches label { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13.5px; font-weight: 700; }
+.cd-note { margin: -10px 24px 18px; }
+.cd-tabs { display: flex; gap: 4px; border-bottom: 1.5px solid #E3E0DA; margin-bottom: 18px; overflow-x: auto; }
+.cd-tabs button { height: 46px; padding: 0 16px; font-weight: 700; font-size: 15px; color: var(--sub); white-space: nowrap; }
+.cd-tabs button.on { color: var(--text); font-weight: 800; box-shadow: inset 0 -3px 0 var(--accent); }
+.cd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.cd-combo { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.cd-combo-foot { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; border-top: 1px solid var(--line); padding-top: 10px; }
+.cd-combo-foot b { font-size: 17px; }
+.cd-inline-switch { display: flex; justify-content: space-between; align-items: center; font-size: 13.5px; font-weight: 700; }
+.cd-lunch { display: flex; align-items: center; gap: 16px; padding: 16px 20px; flex-wrap: wrap; }
+.cd-lunch-day { width: 110px; font-weight: 800; font-size: 14px; }
+.cd-lunch-bar { width: 180px; }
+.cd-lunch-bar > div { height: 8px; border-radius: 999px; background: var(--chip); margin-top: 6px; overflow: hidden; }
+.cd-lunch-bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.cd-team { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+.cd-panel { flex: 1 1 380px; padding: 20px; }
+.cd-rider { padding: 12px 0; border-top: 1px solid var(--line); }
+@media (max-width: 760px) {
+  .cd-top { padding: 0 16px; }
+  .cd-stats { margin: 16px; }
+  .cd-stats > div { border-left: 0; border-top: 1px solid var(--line); }
+  .cd-stats > div:first-child { border-top: 0; }
+}
+
+/* Products → Import Excel */
+.ix-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+.ix-steps span { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--bg); font-size: 13px; color: #4B4B4B; line-height: 1.4; }
+.ix-steps b { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; flex: none; }
+.ix-file { cursor: pointer; }
+.ix-table { max-height: 46vh; overflow: auto; border: 1px solid var(--line); border-radius: 14px; }
+.modal.wide:has(.ix-table) { max-width: 860px; }

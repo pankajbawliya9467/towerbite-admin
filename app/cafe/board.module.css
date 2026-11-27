@@ -1,28 +1,76 @@
-.board { display: flex; gap: 16px; padding: 22px 24px 32px; align-items: flex-start; }
-.col { flex: 1; min-width: 0; background: #EBE9E3; border-radius: 22px; padding: 12px; }
-.col > :global(.row) { padding: 4px 6px 0; }
-.count { font-size: 13px; background: #fff !important; color: var(--text) !important; min-width: 28px; justify-content: center; }
-.card { margin-top: 12px; padding: 18px; border-top: 5px solid; border-radius: 18px; transition: box-shadow .3s; }
-.no { font-size: 22px; font-weight: 800; }
-.ago { font-size: 13px; font-weight: 800; }
-.rider { font-size: 14px; color: var(--sub); }
-.addr { font-size: 15px; margin-top: 6px; font-weight: 700; }
-.who { font-size: 14px; color: var(--sub); margin-top: 2px; }
-.items { font-size: 17px; margin-top: 12px; line-height: 1.6; }
-.items b { font-weight: 800; }
-.team { margin-top: 6px; display: inline-flex; padding: 4px 9px; border-radius: 8px; background: #EEF2FF; color: #3730A3; font-size: 12px; font-weight: 800; }
-.note { white-space: pre-line; margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: var(--amberSoft); color: #78350F; font-size: 13px; font-weight: 700; }
-.cod { background: var(--chip); color: var(--text); font-size: 13px; padding: 6px 10px; border-radius: 8px; }
-.actions { display: flex; gap: 8px; margin-top: 14px; }
-.actions :global(.btn) { height: 48px; border-radius: 14px; }
-.delivered { color: var(--green); font-weight: 600; font-size: 16px; }
-.empty { margin-top: 12px; border: 1.5px dashed #D6D3CD; border-radius: 18px; padding: 24px; text-align: center; color: var(--sub); font-size: 14px; font-weight: 600; }
-.fresh { animation: ring 1.2s ease-out 0s 8; box-shadow: 0 0 0 3px var(--accent), 0 10px 24px rgba(232,89,12,.25); }
-@keyframes ring {
-  0% { box-shadow: 0 0 0 3px var(--accent), 0 0 0 3px rgba(232,89,12,.35); }
-  100% { box-shadow: 0 0 0 3px var(--accent), 0 0 0 16px rgba(232,89,12,0); }
+/* Live order board (cafe panel). Three columns: New, Preparing, On the way. */
+.wrap { padding: 20px 24px 32px; display: flex; flex-direction: column; gap: 18px; }
+.head { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; justify-content: space-between; }
+.title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.title h1 { font-size: 26px; font-weight: 800; letter-spacing: -.5px; margin: 0; }
+.live { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--greenSoft); color: var(--greenText); font-size: 13px; font-weight: 800; }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: var(--greenDot); animation: blink 2s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: .35; } }
+.summary { display: flex; gap: 8px; flex-wrap: wrap; }
+.summary span { height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; font-weight: 700; color: var(--sub); }
+.summary b { color: var(--text); }
+.find { display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 12px; border: 1.5px solid #E3E0DA; border-radius: 12px; background: var(--surface); color: var(--faint); width: 240px; max-width: 100%; }
+.find input { border: 0; outline: 0; flex: 1; min-width: 0; font-size: 14px; background: transparent; }
+
+.board { display: flex; gap: 18px; align-items: flex-start; }
+.col { flex: 1; min-width: 0; background: #ECEAE4; border-radius: 22px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.colHead { display: flex; align-items: center; gap: 10px; padding: 2px 6px; }
+.colHead h2 { margin: 0; font-size: 17px; font-weight: 800; }
+.hint { font-size: 12.5px; color: var(--sub); font-weight: 600; }
+.count { margin-left: auto; min-width: 28px; height: 28px; border-radius: 999px; background: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; padding: 0 8px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+
+/* Order card */
+.card {
+  background: var(--surface); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 20px rgba(0,0,0,.05); border: 2px solid transparent; transition: box-shadow .3s, border-color .3s;
 }
-.dot { width: 10px; height: 10px; border-radius: 5px; display: inline-block; margin-right: 8px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.no { font-size: 21px; font-weight: 800; display: flex; align-items: center; }
+.pill { font-size: 12.5px; font-weight: 800; padding: 4px 10px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
+.pillAmber { background: var(--amberSoft); color: #92400E; }
+.pillOrange { background: var(--accentSoft); color: var(--accentDark); }
+.pillRed { background: var(--redSoft); color: var(--red); }
+.pillBlue { background: var(--blueSoft); color: #1E40AF; }
+.addr { font-size: 15px; font-weight: 800; }
+.who { font-size: 13px; color: var(--sub); margin-top: 2px; }
+.team { align-self: flex-start; padding: 4px 9px; border-radius: 8px; background: #EEF2FF; color: #3730A3; font-size: 12px; font-weight: 800; }
+.items { display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-radius: 12px; background: #FAF9F6; }
+.line { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; line-height: 1.35; }
+.qty { min-width: 26px; height: 26px; border-radius: 8px; background: var(--chip); display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex: none; }
+.itemsNew .qty { background: var(--text); color: #fff; }
+.itemName { font-weight: 600; }
+.combo { font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 6px; background: var(--accentSoft); color: #9A3412; margin-right: 6px; vertical-align: 1px; }
+.detail { display: block; font-size: 12.5px; color: var(--sub); }
+.note { white-space: pre-line; padding: 8px 10px; border-radius: 10px; background: var(--amberSoft); color: #78350F; font-size: 13px; font-weight: 700; }
+.pack { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); }
+.packRow { display: grid; grid-template-columns: minmax(0, 120px) minmax(0, 1fr); gap: 10px; font-size: 13.5px; line-height: 1.4; }
+.packRow b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cod { display: inline-flex; font-size: 13px; font-weight: 800; padding: 5px 10px; border-radius: 999px; background: var(--chip); }
+.collect { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 12px; background: #FAF9F6; font-size: 13.5px; color: var(--sub); font-weight: 600; }
+.collect b { font-size: 18px; color: var(--text); }
+.actions { display: flex; gap: 8px; }
+.big { height: 52px !important; border-radius: 14px !important; font-size: 15px; }
+.delivered { color: var(--green); font-weight: 600; font-size: 16px; }
+.empty { border: 1.5px dashed #D6D3CD; border-radius: 16px; padding: 26px 16px; text-align: center; color: var(--sub); font-size: 14px; font-weight: 600; }
+
+/* Waiting too long / just arrived / picked */
+.late { border-color: #F59E0B; }
+.fresh { animation: ring 1.2s ease-out 0s 8; border-color: var(--accent); }
+@keyframes ring {
+  0% { box-shadow: 0 0 0 0 rgba(232,89,12,.45), 0 8px 20px rgba(0,0,0,.05); }
+  100% { box-shadow: 0 0 0 16px rgba(232,89,12,0), 0 8px 20px rgba(0,0,0,.05); }
+}
+.selected { border-color: var(--text); }
+.pick { width: 20px; height: 20px; margin: 0 10px 0 0; accent-color: var(--accent); cursor: pointer; }
+
+/* Delivery staff buttons */
+.sendWith { display: flex; flex-direction: column; gap: 6px; }
+.sendLabel { font-size: 12px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: .5px; }
+.riderBtns { display: flex; gap: 6px; flex-wrap: wrap; }
+.riderBtns :global(.btn) { flex: 1 1 0; min-width: 0; height: 48px; border-radius: 12px; padding: 0 10px; overflow: hidden; text-overflow: ellipsis; }
+.riderBtns :global(.btn.sec) { flex: 0 0 48px; }
+
 .toast {
   position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff;
   padding: 14px 20px; border-radius: 14px; font-size: 15px; font-weight: 500; box-shadow: var(--shadow); z-index: 60;
@@ -32,12 +80,27 @@
   padding: 14px 20px; border-radius: 14px; font: inherit; font-size: 15px; font-weight: 600; box-shadow: var(--shadow); z-index: 55;
 }
 
+/* Several orders at once */
+.batchBar {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 58; background: var(--text); color: #fff;
+  border-radius: 18px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.25);
+  max-width: calc(100% - 32px); flex-wrap: wrap;
+}
+.batchBar b { font-size: 15px; margin-right: 4px; }
+.batchBar :global(.btn) { height: 42px; border-radius: 12px; }
+.batchBar .clear { color: #D6D3CD; font-weight: 700; font-size: 14px; padding: 0 8px; }
+.pending { opacity: .7; pointer-events: none; }
+
+/* Phones: one column at a time */
 .switcher { display: none; }
 @media (max-width: 760px) {
-  .board { flex-direction: column; gap: 0; padding: 14px 16px 96px; align-items: stretch; }
-  .col { background: none; padding: 0; }
+  .wrap { padding: 12px 12px 110px; gap: 12px; }
+  .head { display: none; }
+  .board { flex-direction: column; gap: 0; align-items: stretch; }
+  .col { background: none; padding: 0; gap: 10px; }
+  .colHead { display: none; }
   .switcher {
-    display: flex; gap: 4px; background: var(--surface); border-radius: 14px; padding: 4px; box-shadow: var(--shadow);
+    display: flex; gap: 4px; background: var(--surface); border-radius: 14px; padding: 4px; margin-bottom: 10px;
     position: sticky; top: 68px; z-index: 5; /* under the 60px top bar */
     box-shadow: var(--shadow), 0 -8px 0 8px var(--bg); /* hides cards scrolling under the gap */
   }
@@ -48,33 +111,9 @@
   .switcher .switchOn { background: var(--text); color: #fff; }
   .switcher :global(.badge) { padding: 2px 8px; }
   .mobileHidden { display: none; }
-  .col > :global(.row) { display: none; }
-  .board { padding: 12px 12px 110px; }
-  .card { padding: 14px 14px 16px; border-radius: 16px; margin-top: 10px; }
-  .no { font-size: 20px; }
-  .items { font-size: 16px; margin-top: 10px; line-height: 1.5; }
-  .addr { font-size: 15px; }
-  .note { font-size: 12.5px; }
-  .actions :global(.btn) { height: 50px; flex: 1; }
-  .riderBtns :global(.btn) { height: 48px; }
+  .card { padding: 14px; border-radius: 16px; }
+  .no { font-size: 19px; }
   .soundPrompt { left: 16px; right: 16px; bottom: 16px; }
   .toast { bottom: 84px; width: calc(100% - 32px); text-align: center; }
+  .batchBar { bottom: 16px; left: 16px; right: 16px; transform: none; max-width: none; }
 }
-
-/* Select several orders, delivery staff buttons, batch bar */
-.pick { width: 20px; height: 20px; margin: 0 10px 0 0; vertical-align: -3px; accent-color: var(--accent); cursor: pointer; }
-.selected { box-shadow: 0 0 0 3px var(--text); }
-.sendWith { margin-top: 14px; }
-.sendLabel { display: block; font-size: 12px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
-.riderBtns { display: flex; gap: 6px; flex-wrap: wrap; }
-.riderBtns :global(.btn) { flex: 1 1 0; min-width: 0; height: 46px; border-radius: 12px; padding: 0 10px; overflow: hidden; text-overflow: ellipsis; }
-.batchBar {
-  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 58; background: var(--text); color: #fff;
-  border-radius: 18px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.25);
-  max-width: calc(100% - 32px); flex-wrap: wrap;
-}
-.batchBar b { font-size: 15px; margin-right: 4px; }
-.batchBar :global(.btn) { height: 42px; border-radius: 12px; }
-.batchBar .clear { color: #D6D3CD; font-weight: 700; font-size: 14px; padding: 0 8px; }
-.pending { opacity: .7; pointer-events: none; }
-@media (max-width: 760px) { .batchBar { bottom: 16px; left: 16px; right: 16px; transform: none; max-width: none; } }

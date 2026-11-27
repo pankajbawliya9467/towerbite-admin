@@ -14,11 +14,11 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+async function request<T>(method: string, path: string, body?: unknown, cafeId: string | null = cafeScope): Promise<T> {
   const token = await getToken();
   const headers: Record<string, string> = {};
   if (token) headers.authorization = `Bearer ${token}`;
-  if (cafeScope && path.startsWith('/v1/cafe')) headers['x-cafe-id'] = cafeScope;
+  if (cafeId && path.startsWith('/v1/cafe')) headers['x-cafe-id'] = cafeId;
   if (body !== undefined && !(body instanceof FormData)) headers['content-type'] = 'application/json';
   const res = await fetch(API_URL + path, {
     method,
@@ -71,6 +71,16 @@ export const api = {
     return request<{ url: string; path: string }>('POST', folder === 'cafe' ? '/v1/cafe/upload' : '/v1/admin/upload', form);
   },
 };
+
+/**
+ * Calls the cafe panel API (`/v1/cafe/...`) for one cafe from an admin page, without changing the cafe the
+ * live board is open for. The admin needs the "Live board" tick (and the menu ticks to change things).
+ */
+export const forCafe = (cafeId: string) => ({
+  get: <T>(path: string) => request<T>('GET', path, undefined, cafeId),
+  post: <T>(path: string, body: unknown = {}) => request<T>('POST', path, body, cafeId),
+  patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body, cafeId),
+});
 
 /** Builds a query string from the set values only. */
 export function qs(params: Record<string, string | undefined>) {

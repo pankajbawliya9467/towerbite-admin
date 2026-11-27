@@ -68,7 +68,7 @@ export function CafeHeader() {
         { href: '/cafe/ratings', label: 'Ratings', icon: 'star' },
         { href: '/cafe/reports', label: 'Reports', icon: 'chart' },
         ...(isAdmin ? [] : [{ href: '/cafe/account', label: 'My account', icon: 'key' as const }]),
-        ...(isAdmin ? [{ href: '/admin/cafes', label: 'Back to admin', icon: 'back' as const }] : []),
+        ...(isAdmin ? [{ href: `/admin/cafes/${cafe.id}/details`, label: 'Back to admin', icon: 'back' as const }] : []),
       ]}
       quick={
         <button

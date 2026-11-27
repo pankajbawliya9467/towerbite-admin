@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { api, qs } from '@/lib/api';
 import { useLoad } from '@/lib/useLoad';
@@ -55,6 +55,8 @@ export default function MappingPage() {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [filter, setFilter] = useState<'todo' | 'all'>('todo');
   const [overwrite, setOverwrite] = useState(false);
+  // Bumped after Apply / Import / Suggest, so the list of products without a category reloads too.
+  const [stamp, setStamp] = useState(0);
   const file = useRef<HTMLInputElement>(null);
 
   const groups = map.data ?? [];
@@ -67,6 +69,7 @@ export default function MappingPage() {
     try {
       await fn();
       await Promise.all([map.reload(), cat.reload()]);
+      setStamp((n) => n + 1);
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -141,7 +144,7 @@ export default function MappingPage() {
         <li className={cat.data?.categories.length ? 'done' : ''}><b>1. Build the list</b><span>On Categories, or Import the starting file</span></li>
         <li className={withProducts.length && withProducts.every((g) => g.mapped) ? 'done' : ''}><b>2. Suggest</b><span>Matches old names by their “old names”</span></li>
         <li className={withProducts.length && done === withProducts.length ? 'done' : ''}><b>3. Check &amp; approve</b><span>{done} of {withProducts.length} names approved</span></li>
-        <li className={cat.data && cat.data.totalProducts && !cat.data.unassigned ? 'done' : ''}><b>4. Apply</b><span>{cat.data ? `${cat.data.unassigned} products without a category` : ''}</span></li>
+        <li className={cat.data && cat.data.totalProducts && !cat.data.unassigned ? 'done' : ''}><b>4. Apply</b><span>{cat.data ? `${cat.data.unassigned} products on menus without a category` : ''}</span></li>
       </ol>
 
       {(map.error || cat.error) && <div className="err">{map.error || cat.error}</div>}
@@ -232,13 +235,13 @@ export default function MappingPage() {
         </table>
       </div>
 
-      <Unassigned targets={targets} onMoved={() => void cat.reload()} />
+      <Unassigned targets={targets} stamp={stamp} onMoved={() => void cat.reload()} />
     </main>
   );
 }
 
 /** Products without a global category: pick some, pick a category, move. */
-function Unassigned({ targets, onMoved }: { targets: ReturnType<typeof useTargets>; onMoved: () => void }) {
+function Unassigned({ targets, stamp, onMoved }: { targets: ReturnType<typeof useTargets>; stamp: number; onMoved: () => void }) {
   const cafes = useLoad<Cafe[]>('/v1/admin/cafes');
   const [cafeId, setCafeId] = useState('');
   const [search, setSearch] = useState('');
@@ -247,6 +250,10 @@ function Unassigned({ targets, onMoved }: { targets: ReturnType<typeof useTarget
   const [to, setTo] = useState('');
   const list = useLoad<Page<CatalogProduct>>(`/v1/admin/catalog/products${qs({ category: 'none', cafeId, search, page: String(page), pageSize: '50' })}`, undefined, true);
   const rows = list.data?.rows ?? [];
+  const { reload } = list;
+  useEffect(() => {
+    if (stamp) void reload();
+  }, [stamp, reload]);
   const pages = Math.max(1, Math.ceil((list.data?.total ?? 0) / 50));
 
   async function move() {
@@ -272,7 +279,7 @@ function Unassigned({ targets, onMoved }: { targets: ReturnType<typeof useTarget
       <div className="row" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div className="h2">Products without a category · {list.data?.total ?? '…'}</div>
-          <div className="small">After Apply, these are left. Tick them, pick a category, Move.</div>
+          <div className="small">After Apply, these are left (hidden products and closed cafes included). Tick them, pick a category, Move.</div>
         </div>
       </div>
       <div className="lt-bar" style={{ alignItems: 'center' }}>

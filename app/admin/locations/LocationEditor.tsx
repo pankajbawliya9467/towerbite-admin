@@ -9,9 +9,10 @@ import { Field } from '@/components/Field';
 import { SwitchRow } from '@/components/Switch';
 import { useCan } from '@/components/useCan';
 import { Towers } from './Towers';
+import { AreaPicker } from '@/components/AreaPicker';
 
 export type Draft = Omit<Location, 'id'> & { id?: string };
-export const blank: Draft = { slug: '', name: '', area: '', city: '', isActive: true };
+export const blank: Draft = { slug: '', name: '', area: '', city: '', isActive: false, areaGeo: null, outsideAllowed: false };
 
 /** New / edit location on its own page, with its towers. */
 export function LocationEditor({ draft, towers, reloadTowers }: { draft: Draft; towers: Tower[]; reloadTowers: () => Promise<void> }) {
@@ -22,13 +23,22 @@ export function LocationEditor({ draft, towers, reloadTowers }: { draft: Draft; 
   const ok = useCan();
   const edit = d.id ? ok('locations.edit') : ok('locations.add');
   const live = d.id ? ok('locations.delete') : ok('locations.add');
+  const geo = ok('locations.geo');
+  const hasArea = !!d.areaGeo && d.areaGeo.length >= 3;
+  const areaChanged = JSON.stringify(d.areaGeo) !== JSON.stringify(draft.areaGeo ?? null);
 
   async function save() {
-    const { id, ...body } = d;
+    const { id, areaGeo, ...body } = d;
+    if (body.isActive && !(areaGeo && areaGeo.length >= 3)) throw new Error("Draw the location's area on the map before making it live.");
     if (id) {
+      // The area is saved first, so "live" can be switched on in the same save.
+      if (areaChanged && areaGeo) await api.put(`/v1/admin/locations/${id}/area`, { area: areaGeo });
       await api.patch(`/v1/admin/locations/${id}`, body);
+      if (areaChanged && !areaGeo) await api.put(`/v1/admin/locations/${id}/area`, { area: null });
     } else {
-      const made = await api.post<Location>('/v1/admin/locations', body);
+      const made = await api.post<Location>('/v1/admin/locations', { ...body, isActive: false });
+      if (areaGeo) await api.put(`/v1/admin/locations/${made.id}/area`, { area: areaGeo });
+      if (body.isActive) await api.patch(`/v1/admin/locations/${made.id}`, { isActive: true });
       router.replace(`/admin/locations/${made.id}`); // next: add its towers
     }
   }
@@ -58,8 +68,29 @@ export function LocationEditor({ draft, towers, reloadTowers }: { draft: Draft; 
       <Field label="Area"><input className="field" value={d.area} placeholder="Sector 49" onChange={(e) => set('area', e.target.value)} /></Field>
       <Field label="City"><input className="field" value={d.city} placeholder="Gurugram" onChange={(e) => set('city', e.target.value)} /></Field>
       </fieldset>
-      <fieldset className="fs" disabled={!live}>
+      </FormCard>
+      <FormCard title="Area on the map" note="Draw the campus boundary. The app shows this location to people standing inside it, and nearby locations with their distance.">
+        <div className="full">
+          <AreaPicker area={d.areaGeo} onChange={(a) => set('areaGeo', a)} disabled={!geo} />
+          {!geo && <div className="small" style={{ marginTop: 6 }}>You need the location check tick to draw or change the area.</div>}
+        </div>
+        <fieldset className="fs full" disabled={!geo}>
+          <SwitchRow
+            label={d.outsideAllowed ? 'Orders from outside the area: allowed' : 'Orders from outside the area: not allowed'}
+            on={d.outsideAllowed}
+            onChange={(v) => set('outsideAllowed', v)}
+          />
+          <div className="small" style={{ marginTop: 6 }}>
+            {d.outsideAllowed
+              ? 'Anyone can order from these cafes, wherever they are.'
+              : 'Customers can order only while they are inside the area (checked with their phone location).'}
+          </div>
+        </fieldset>
+      </FormCard>
+      <FormCard title="Live">
+      <fieldset className="fs full" disabled={!live || (!hasArea && !d.isActive)}>
       <div className="full"><SwitchRow label="Live for employees" on={d.isActive} onChange={(v) => set('isActive', v)} /></div>
+      {!hasArea && <div className="full small" style={{ marginTop: 6, color: 'var(--red)' }}>Draw the area first. A location without an area is hidden in the app and takes no orders.</div>}
       </fieldset>
       </FormCard>
     </FormPage>

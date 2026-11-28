@@ -39,7 +39,13 @@ export type MenuItem = {
 export type CafeWithMenu = Cafe & { categories: Category[]; items: MenuItem[] };
 export type CafeStats = { orders: number; delivered: number; sales: number; codCollected: number; active: number };
 
-export type Location = { id: string; slug: string; name: string; area: string; city: string; isActive: boolean };
+export type Location = {
+  id: string; slug: string; name: string; area: string; city: string; isActive: boolean;
+  /** The campus outline drawn on the map: corners as [lat, lng]. Needed before the location can be live. */
+  areaGeo: [number, number][] | null;
+  /** false: orders only from inside the area */
+  outsideAllowed: boolean;
+};
 export type Tower = { id: string; locationId: string; name: string; sort: number };
 export type StaffRow = Staff & {
   cafeName: string | null; email: string; createdAt: string; passwordSetAt: string | null; activeLogins: number;

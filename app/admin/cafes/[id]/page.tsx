@@ -14,7 +14,7 @@ function EditCafe() {
   if (error) return <main className="page"><div className="err">{error}</div></main>;
   if (!cafe.data || !locations.data) return null;
   return <CafeEditor key={cafe.data.id} draft={cafe.data} locations={locations.data}
-    startTab={tab === 'login' || tab === 'geo' ? tab : undefined} />;
+    startTab={tab === 'login' ? tab : undefined} />;
 }
 
 export default function EditCafePage() {

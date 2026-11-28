@@ -69,7 +69,7 @@ export default function CafeDetailsPage() {
   const c = cafe.data;
   if (!c) return null;
   const loc = locations.data?.find((l) => l.id === c.locationId);
-  const canEdit = ok('cafes.edit') || ok('cafes.openclose') || ok('cafes.logins') || ok('locations.geo');
+  const canEdit = ok('cafes.edit') || ok('cafes.openclose') || ok('cafes.logins');
   const canSwitch = ok('cafes.openclose');
 
   return (
@@ -90,7 +90,6 @@ export default function CafeDetailsPage() {
               {!c.isActive && <span className="badge warn">Inactive · hidden from app</span>}
               <span className={`badge ${c.isOpen ? 'ok' : 'mute'}`}>{c.isOpen ? 'Open' : 'Closed'}</span>
               {c.isOpen && !c.acceptingOrders && <span className="badge warn">Paused</span>}
-              {c.geoCheck && <span className="badge info">GPS check on</span>}
             </div>
             <div className="sub">
               {[c.cuisines, c.place, loc?.name, `${c.etaMin}–${c.etaMax} min`, c.phone].filter(Boolean).join(' · ')}

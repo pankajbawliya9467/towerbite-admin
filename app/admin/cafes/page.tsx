@@ -26,7 +26,7 @@ export default function CafesPage() {
       && (!state || (state === 'open' ? c.isActive && c.isOpen : state === 'closed' ? c.isActive && !c.isOpen : state === 'inactive' ? !c.isActive : true)));
   }, [cafes.data, search, state]);
   const ok = useCan();
-  const canEdit = ok('cafes.edit') || ok('cafes.openclose') || ok('cafes.logins') || ok('locations.geo');
+  const canEdit = ok('cafes.edit') || ok('cafes.openclose') || ok('cafes.logins');
   const locName = (id: string) => locations.data?.find((l) => l.id === id)?.name ?? '';
 
   const go = (cafe: Cafe, path: string) => {
@@ -97,7 +97,6 @@ export default function CafesPage() {
               <div className="small" style={{ marginTop: 2 }}>{locName(c.locationId)} · {c.etaMin}–{c.etaMax} min</div>
               <div className="cf-meta">
                 <span>★ {c.rating.toFixed(1)} <small>({c.ratingCount})</small></span>
-                {c.geoCheck && <span className="badge info">GPS check</span>}
                 {c.phone && <span className="small">{c.phone}</span>}
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>

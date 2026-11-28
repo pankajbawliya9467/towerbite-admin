@@ -7,6 +7,7 @@ import { Field } from '@/components/Field';
 import { Icon } from '@/components/Icon';
 import { useCan } from '@/components/useCan';
 import { PageHead } from '@/components/PageHead';
+import { PushTest } from '@/components/PushTest';
 import { Modal } from '@/components/Modal';
 import { useSession } from '@/components/Session';
 import Link from 'next/link';
@@ -169,6 +170,7 @@ export default function NotificationsPage() {
   return (
     <main className="page">
       <PageHead title="Notifications" sub="Send your own message to app users: offers, new cafes, festival wishes, service updates." />
+      {canSend && <PushTest />}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
         {!canSend ? (
           <section className="card" style={{ flex: '999 1 460px', minWidth: 0, padding: 22 }}>

@@ -9,6 +9,7 @@ import { useCan } from '@/components/useCan';
 import { Icon } from '@/components/Icon';
 
 import { Towers } from './Towers';
+import { AreaThumb } from '@/components/AreaPicker';
 
 export default function LocationsPage() {
   const locations = useLoad<Location[]>('/v1/admin/locations');
@@ -32,12 +33,22 @@ export default function LocationsPage() {
         {locations.data?.map((l) => (
           <div key={l.id} className="card" style={{ padding: 28 }}>
             <div className="row" style={{ alignItems: 'flex-start' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div className="h2">{l.name}</div>
-                  <span className={`badge ${l.isActive ? 'ok' : 'mute'}`}>{l.isActive ? 'Live' : 'Hidden'}</span>
+              <div style={{ display: 'flex', gap: 20, alignItems: 'center', minWidth: 0 }}>
+                <AreaThumb area={l.areaGeo} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <div className="h2">{l.name}</div>
+                    <span className={`badge ${l.isActive ? 'ok' : 'mute'}`}>{l.isActive ? 'Live' : 'Hidden'}</span>
+                    {l.areaGeo ? <span className="badge ok">Area drawn</span> : <span className="badge warn">No area</span>}
+                    {l.outsideAllowed && <span className="badge mute">Outside orders allowed</span>}
+                  </div>
+                  <div className="sub" style={{ marginTop: 4 }}>{[l.area, l.city].filter(Boolean).join(' · ')} <span style={{ color: 'var(--faint)' }}>· /{l.slug}</span></div>
+                  {!l.areaGeo && (
+                    <div className="small" style={{ marginTop: 6, color: 'var(--red)' }}>
+                      {l.isActive ? 'Hidden in the app until its area is drawn. Edit → draw the area.' : 'Draw its area to make it live.'}
+                    </div>
+                  )}
                 </div>
-                <div className="sub" style={{ marginTop: 4 }}>{[l.area, l.city].filter(Boolean).join(' · ')} <span style={{ color: 'var(--faint)' }}>· /{l.slug}</span></div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {(ok('locations.edit') || ok('locations.delete')) && <button className="btn sec sm" onClick={() => router.push(`/admin/locations/${l.id}`)}><Icon name="edit" /> Edit</button>}

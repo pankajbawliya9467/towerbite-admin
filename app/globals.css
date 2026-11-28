@@ -638,3 +638,20 @@ fieldset.fs:disabled .field, fieldset.fs:disabled .switch-row, fieldset.fs:disab
 .mo-card .mo-input { position: relative; }
 .mo-card .mo-input span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--sub); }
 .mo-card .mo-input input { width: 130px; padding-left: 30px; }
+
+/* ---- Location area on the map ---- */
+.area-picker { display: flex; flex-direction: column; gap: 10px; }
+.area-map-wrap { position: relative; }
+.area-map { height: 420px; border-radius: 14px; overflow: hidden; border: 1.5px solid var(--line); z-index: 0; }
+.area-map.drawing { cursor: crosshair; }
+.area-map.drawing .leaflet-container, .area-map.drawing .leaflet-grab { cursor: crosshair; }
+.area-hint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 500; padding: 9px 14px; border-radius: 10px; background: #161616; color: #fff; font-size: 13px; font-weight: 600; white-space: nowrap; pointer-events: none; }
+.area-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.area-ok { font-size: 13px; font-weight: 800; color: var(--greenText); margin-right: auto; }
+.area-toggle { display: inline-flex; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; }
+.area-toggle button { border: 0; background: var(--surface); padding: 0 14px; height: 40px; font: inherit; font-size: 13px; font-weight: 700; color: var(--text); cursor: pointer; }
+.area-toggle button.on { background: var(--text); color: #fff; }
+.area-handle { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid #E8590C; box-sizing: border-box; cursor: grab; }
+.area-thumb { flex: none; border-radius: 12px; background: var(--bg); display: block; }
+.area-thumb.empty { display: flex; align-items: center; justify-content: center; text-align: center; border: 2px dashed var(--line); box-sizing: border-box; font-size: 12px; font-weight: 700; color: var(--faint); padding: 8px; }
+@media (max-width: 640px) { .area-map { height: 320px; } .area-hint { white-space: normal; width: calc(100% - 40px); text-align: center; } }

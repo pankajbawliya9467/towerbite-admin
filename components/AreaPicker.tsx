@@ -67,7 +67,7 @@ export function AreaPicker({ area, onChange, disabled }: { area: Area | null; on
         setDrawing([...cur, [round(e.latlng.lat), round(e.latlng.lng)]]);
       });
       map.current = m;
-      if (area && area.length >= 3) m.fitBounds(area as LatLngExpression[], { padding: [30, 30] });
+      if (area && area.length >= 3) m.fitBounds(area, { padding: [30, 30] });
       setReady(true);
     });
     return () => {
@@ -206,7 +206,7 @@ export function AreaPicker({ area, onChange, disabled }: { area: Area | null; on
             <span className="area-ok">Area drawn · {area.length} corners · about {areaSize(area)}</span>
             {!disabled && <button type="button" className="btn sec sm" onClick={startDrawing}>Redraw</button>}
             {!disabled && (
-              <button type="button" className="btn sec sm" onClick={() => map.current?.fitBounds(area as LatLngExpression[], { padding: [30, 30] })}>
+              <button type="button" className="btn sec sm" onClick={() => map.current?.fitBounds(area, { padding: [30, 30] })}>
                 Zoom to area
               </button>
             )}
